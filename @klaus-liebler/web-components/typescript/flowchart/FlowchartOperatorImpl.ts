@@ -879,7 +879,7 @@ export class Arithmetic_ConstINTEGEROperator extends FlowchartOperator {
     }
 
     public OnSimulationStart(ctx:SimulationContext){
-        ctx.SetFloat(this.O, this.cfg_getValue(CONSTANT, 0));
+        ctx.SetInteger(this.O, this.cfg_getValue(CONSTANT, 0));
     }
 }
 
