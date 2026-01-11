@@ -9,7 +9,7 @@ import { UPLOAD_URL } from "../utils/constants";
 import { findChipModel, findChipFeatures, subtypeToString, otaStateToString } from "../utils/esp32";
 import { html } from "lit-html";
 import { Ref, createRef, ref } from "lit-html/directives/ref.js";
-import { OkCancelDialog, OkDialog } from "../dialog_controller";
+import { OkCancelDialog, OkDialog } from "../dialog_controller.ts";
 import { MyFavouriteDateTimeFormat, Severity } from "@klaus-liebler/commons";
 
 

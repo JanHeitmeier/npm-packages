@@ -1,0 +1,33 @@
+:root {
+  --celadon: #A6D49F;
+  --olivine: #9CB380;
+  --caput: #522A27;
+  --sinopia: #C73E1D;
+  --satin: #C59849;
+  --timberwolf: #EADEDA;
+  --cinereous: #998888;
+  --silver: #BFB8AD;
+  --white: #ffffff;
+  --black: #000000;
+  --color-primary: #A6D49F;
+  --color-secondary: #9CB380;
+  --color-accent: #C73E1D;
+  --color-bg: #EADEDA;
+  --color-panel: #ffffff;
+  --color-shadow: rgba(0, 0, 0, 0.1);
+  --color-border: #ccc;
+  --color-input-bg: #f9f9f9;
+  --color-input-border: #ccc;
+  --color-button: #998888;
+  --color-button-hover: #BFB8AD;
+  --radius: 10px;
+  --shadow: 0 4px 8px var(--color-shadow);
+  --font-main: "Dosis", sans-serif;
+  --accent: #b4e0b4;
+  --neutral: #dcdcd5;
+  --highlight: #a6d49f;
+  --error: #ff6f61;
+  --bg: #fefefe;
+  --border: #ccc;
+  --text: #333;
+}

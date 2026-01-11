@@ -1,14 +1,17 @@
-import "../style/app.css"
+// app.css is intentionally not imported here. Individual controllers load their own CSS and the
+// shared controller CSS is imported by the ScreenController base class.
 import { TemplateResult, html, render } from "lit-html";
 import { Ref, createRef, ref } from "lit-html/directives/ref.js";
 import * as flatbuffers from "flatbuffers";
-import { Chatbot } from "./chatbot";
-import { DialogController, OkDialog } from "./dialog_controller";
-import { runCarRace } from "./screen_controller/racinggame_controller";
-import { DefaultScreenController, ScreenController } from "./screen_controller/screen_controller";
-import { Html} from "./utils/common";
+import { DialogController, OkDialog } from "./dialog_controller.ts";
+import { DefaultScreenController, ScreenController } from "./controllers/screen_controller.ts";
+import { LiveViewController } from "./controllers/LiveViewController";
+import { RecipeEditorController } from "./controllers/RecipeEditorController";
+import { AnalyticsController } from "./controllers/AnalyticsController";
+import { CombinedSettingsController } from "./controllers/CombinedSettingsController";
+import { Html} from "./utils/common.ts";
 import { IsNotNullOrEmpty, MyFavouriteDateTimeFormat, Severity, severity2class, severity2symbol} from "@klaus-liebler/commons";
-import { IAppManagement, IScreenControllerHost, IWebsocketMessageListener } from "./utils/interfaces";
+import { IAppManagement, IScreenControllerHost, IWebsocketMessageListener } from "./utils/interfaces.ts";
 import RouterMenu, { IRouteHandler, Route } from "./utils/routermenu";
 import {ArrayBufferToHexString} from "@klaus-liebler/commons"
 import * as cfg from "@generated/runtimeconfig_ts"
@@ -44,8 +47,6 @@ export class AppController implements IAppManagement, IScreenControllerHost {
   
   private dialog: Ref<HTMLDivElement> = createRef();
   private snackbarTimeout: number = -1;
-
-  private chatbot: Chatbot;
 
 
   public ShowDialog(d: DialogController) {
@@ -186,15 +187,6 @@ export class AppController implements IAppManagement, IScreenControllerHost {
     console.log(text)
   }
 
-  private easteregg() {
-    if(this.activateEastereggs){
-      document.body.innerText = "";
-      document.body.innerHTML = "<canvas id='c'>"
-      var el = <HTMLCanvasElement>document.getElementById("c")!
-      runCarRace(el);
-    }
-  }
-
   constructor(
     private readonly appTitle:string, 
     private readonly websocketUrl:string, 
@@ -204,23 +196,73 @@ export class AppController implements IAppManagement, IScreenControllerHost {
 
   
   public Startup() {
-    this.chatbot = new Chatbot(this.google_api_key_for_chatbot_or_null_to_deactivate);
-    const bg=`<svg viewBox="0 0 1440 360" xmlns="http://www.w3.org/2000/svg"><path fill="#9EAFFD" opacity="0.3" d="M0 432 V216 Q432 43.2 864 216 V432z" /><path fill="#9EAFFD" opacity="0.7" d="M0 432 V172.8 Q432 244.8 792 172.8 T1440 158.4 V432z" /></svg>`
-    const svgDataUrl = `data:image/svg+xml;base64,${btoa(bg)}`;
+    const menuIconRef: Ref<HTMLDivElement> = createRef();
+
+    const updateMenuIcon = () => {
+      if (!menuIconRef.value) return;
+      const dropdown = document.querySelector('.nav-dropdown') as HTMLElement;
+      const isOpen = dropdown && dropdown.style.display === 'block';
+
+      const arrowDownIcon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512" width="24" height="24" fill="white"><path d="M151.6 469.6C145.5 476.2 137 480 128 480s-17.5-3.8-23.6-10.4l-88-96c-11.9-13-11.1-33.3 2-45.2s33.3-11.1 45.2 2L96 365.7 96 64c0-17.7 14.3-32 32-32s32 14.3 32 32l0 301.7 32.4-35.4c11.9-13 32.2-13.9 45.2-2s13.9 32.2 2 45.2l-88 96zM320 32l32 0c17.7 0 32 14.3 32 32s-14.3 32-32 32l-32 0c-17.7 0-32-14.3-32-32s14.3-32 32-32zm0 128l96 0c17.7 0 32 14.3 32 32s-14.3 32-32 32l-96 0c-17.7 0-32-14.3-32-32s14.3-32 32-32zm0 128l160 0c17.7 0 32 14.3 32 32s-14.3 32-32 32l-160 0c-17.7 0-32-14.3-32-32s14.3-32 32-32zm0 128l224 0c17.7 0 32 14.3 32 32s-14.3 32-32 32l-224 0c-17.7 0-32-14.3-32-32s14.3-32 32-32z"/></svg>`;
+      const arrowUpIcon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512" width="24" height="24" fill="white"><path d="M151.6 42.4C145.5 35.8 137 32 128 32s-17.5 3.8-23.6 10.4l-88 96c-11.9 13-11.1 33.3 2 45.2s33.3 11.1 45.2-2L96 146.3 96 448c0 17.7 14.3 32 32 32s32-14.3 32-32l0-301.7 32.4 35.4c11.9 13 32.2 13.9 45.2 2s13.9-32.2 2-45.2l-88-96zM320 32c-17.7 0-32 14.3-32 32s14.3 32 32 32l32 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l-32 0zm0 128c-17.7 0-32 14.3-32 32s14.3 32 32 32l96 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l-96 0zm0 128c-17.7 0-32 14.3-32 32s14.3 32 32 32l160 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l-160 0zm0 128c-17.7 0-32 14.3-32 32s14.3 32 32 32l224 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l-224 0z"/></svg>`;
+
+      menuIconRef.value.innerHTML = isOpen ? arrowUpIcon : arrowDownIcon;
+    };
+
+    // Menüeinträge registrieren (Reihenfolge: Dashboard, Live, Recipe, Analytics, Combined Settings)
+    this.AddScreenController(
+      "/",
+      /^\/$/,
+      html`<span>Dashboard</span>`,
+      new DefaultScreenController(this)
+    );
+
+    this.AddScreenController(
+      "/live",
+      /^\/live$/,
+      html`<span>🌐</span><span>Live</span>`,
+      new LiveViewController(this)
+    );
+
+    this.AddScreenController(
+      "/recipe",
+      /^\/recipe$/,
+      html`<span>📖</span><span>Recipe</span>`,
+      new RecipeEditorController(this)
+    );
+
+    this.AddScreenController(
+      "/analytics",
+      /^\/analytics$/,
+      html`<span>📈</span><span>Analytics</span>`,
+      new AnalyticsController(this)
+    );
+
+    this.AddScreenController(
+      "/settings",
+      /^\/settings$/,
+      html`<span>⚙️</span><span>Settings</span>`,
+      new CombinedSettingsController(this)
+    );
+
     const Template = html`
-            <header style="background-image: url('${svgDataUrl}');">
-              <span @click=${() => this.easteregg()}> ${this.appTitle} </span>
-            </header>
-            <nav>${this.menu.Template()}<a href="javascript:void(0);" @click=${() => this.menu.ToggleHamburgerMenu()}><i>≡</i></a></nav>
-            <main ${ref(this.mainRef)}></main>
-            <footer>Klaus Liebler, &copy;${new Date(1000*Number(cfg.CREATION_DT)).toLocaleString("de-DE", MyFavouriteDateTimeFormat)} :: GitHash ${cfg.GIT_SHORT_HASH} :: AppName ${cfg.APP_NAME} :: AppVersion ${cfg.APP_VERSION} ${this.additionalFooter}</footer>
-            <div ${ref(this.modalSpinner)} class="modal"><span class="loader"></span></div>
-            <div id="snackbar">Some text some message..</div>
-            <div ${ref(this.dialog)}></div>
-            ${IsNotNullOrEmpty(this.google_api_key_for_chatbot_or_null_to_deactivate)?this.chatbot.Template():""}`
+      <nav>
+        <div ${ref(menuIconRef)} class="nav-menu-icon" @click=${() => {
+          this.menu.ToggleDropdown();
+          setTimeout(updateMenuIcon, 0);
+        }}>
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512" width="24" height="24" fill="white"><path d="M151.6 469.6C145.5 476.2 137 480 128 480s-17.5-3.8-23.6-10.4l-88-96c-11.9-13-11.1-33.3 2-45.2s33.3-11.1 45.2 2L96 365.7 96 64c0-17.7 14.3-32 32-32s32 14.3 32 32l0 301.7 32.4-35.4c11.9-13 32.2-13.9 45.2-2s13.9 32.2 2 45.2l-88 96zM320 32l32 0c17.7 0 32 14.3 32 32s-14.3 32-32 32l-32 0c-17.7 0-32-14.3-32-32s14.3-32 32-32zm0 128l96 0c17.7 0 32 14.3 32 32s-14.3 32-32 32l-96 0c-17.7 0-32-14.3-32-32s14.3-32 32-32zm0 128l160 0c17.7 0 32 14.3 32 32s-14.3 32-32 32l-160 0c-17.7 0-32-14.3-32-32s14.3-32 32-32zm0 128l224 0c17.7 0 32 14.3 32 32s-14.3 32-32 32l-224 0c-17.7 0-32-14.3-32-32s14.3-32 32-32z"/></svg>
+        </div>
+        ${this.menu.Template()}
+      </nav>
+      <main ${ref(this.mainRef)}></main>
+      <div ${ref(this.modalSpinner)} class="modal"><span class="loader"></span></div>
+      <div id="snackbar">Some text some message..</div>
+      <div ${ref(this.dialog)}></div>
+    `;
     render(Template, document.body);
-    window.onresize=()=>{
-      this.menu.ShowHamburgerMenuIfLargeScreen()
+    window.onresize = () => {
+      this.menu.ShowHamburgerMenuIfLargeScreen();
     };
     console.log(`Connecting to ${this.websocketUrl}`)
     this.setModal(true);
@@ -229,14 +271,13 @@ export class AppController implements IAppManagement, IScreenControllerHost {
     this.socket.onopen = (_event) => {
       console.log(`Websocket is connected.`)
       this.setModal(false);
-      if (this.messageBuffer.length>0) {
+      if (this.messageBuffer.length > 0) {
         console.log(`There are ${this.messageBuffer.length} messages in buffer.`)
-        for(const m of this.messageBuffer){
+        for (const m of this.messageBuffer) {
           this.sendMessage(m);
-
         }
       }
-      this.messageBuffer=new Array<BufferedMessage>()
+      this.messageBuffer = new Array<BufferedMessage>()
     }
     this.socket.onerror = (event: Event) => {
       console.error(`Websocket error ${JSON.stringify(event)}`)
@@ -256,8 +297,6 @@ export class AppController implements IAppManagement, IScreenControllerHost {
       this.setModal(true);
     }
     this.menu.check();
-    //this.chatbot.Setup();
-
   }
 
   

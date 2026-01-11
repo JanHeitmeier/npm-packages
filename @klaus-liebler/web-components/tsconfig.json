@@ -5,22 +5,28 @@
       "module": "ESNext",
       "lib": ["ES2020", "DOM", "DOM.Iterable"],
       "skipLibCheck": true,
-  
+
       /* Bundler mode */
       "moduleResolution": "bundler",
       "allowImportingTsExtensions": true,
       "resolveJsonModule": true,
       "isolatedModules": true,
       "noEmit": true,
-  
+
       /* Linting */
       "strict": false,
       "noUnusedLocals": false,
       "noUnusedParameters": false,
       "noFallthroughCasesInSwitch": true,
-      "types": ["vite/client"]
+      "types": ["vite/client"],
 
+      /* Path mapping for generated usersettings */
+      "baseUrl": ".",
+      "paths": {
+        "@generated/usersettings_ts/*": ["../../generated/usersettings_ts/*"],
+        "@generated/runtimeconfig_ts/*": ["../../generated/runtimeconfig_ts/*"]
+      }
     },
-    "include": ["typescript"]
+    "include": ["reciepe", "controllers", "../generated/usersettings_ts", "../generated/runtimeconfig_ts"]
   }
   

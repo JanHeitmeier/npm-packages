@@ -6,7 +6,7 @@ import { Namespace, RequestNetworkInformation, RequestWifiConnect, RequestWifiDi
 import { TemplateResult, html, render } from "lit-html";
 import { Ref, createRef, ref } from "lit-html/directives/ref.js";
 import { unsafeSVG } from "lit-html/directives/unsafe-svg.js";
-import { OkCancelDialog, OkDialog, PasswordDialog } from "../dialog_controller";
+import { OkCancelDialog, OkDialog, PasswordDialog } from "../dialog_controller.ts";
 import { ip4_2_string, Severity } from "@klaus-liebler/commons";
 
 

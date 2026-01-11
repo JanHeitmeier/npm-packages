@@ -1,0 +1,75 @@
+/* Menü-spezifische Styles (aus früherem ui.css extrahiert).
+   Keine globalen "nav width:0" oder generellen Layout-Eingriffe. */
+.app-menu {
+    display: contents;
+}
+
+.nav-menu-icon {
+    width: 50px;
+    height: 50px;
+    background-color: #333;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    border-radius: 8px;
+    position: fixed;
+    top: 10px;
+    left: 10px;
+    z-index: 2200;
+}
+
+.nav-dropdown {
+    display: none;
+    position: absolute;
+    top: 60px;
+    left: 10px;
+    background-color: white;
+    width: auto;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    border-radius: 8px;
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    z-index: 2300;
+}
+
+.nav-dropdown li a {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 48px;
+    padding: 8px 12px;
+    color: #333;
+    text-decoration: none;
+}
+
+.menu-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 120ms;
+}
+.menu-item:hover {
+    background: rgba(255,255,255,0.03);
+}
+.menu-item .icon {
+    display: inline-flex;
+    width: 28px;
+    height: 28px;
+    align-items: center;
+    justify-content: center;
+    color: var(--icon-color, #9ca3af);
+}
+.menu-item .label {
+    font-size: 14px;
+}
+
+/* visibility helper for inline style toggles */
+.nav-dropdown[style*="display:block"] {
+    display: block;
+}

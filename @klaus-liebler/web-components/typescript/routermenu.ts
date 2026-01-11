@@ -1,6 +1,9 @@
 import {TemplateResult, html, render} from 'lit-html';
+// menu styles are required for the navigation UI (dropdown/button)
+import "../style/menu.css";
 import { createRef, ref, Ref } from 'lit-html/directives/ref.js';
 import { IHtmlRenderer } from './utils/interfaces';
+import { MenuTemplate } from './templates/menu_template';
 
 export interface IRouteHandler {
   handleRoute(params: RegExpMatchArray): void;
@@ -29,7 +32,12 @@ export default class RouterMenu implements IHtmlRenderer {
     }
   }
   RenderStatic(container: HTMLElement): void {
-    render(this.Template, container)
+    try{
+      const mapped = this.routes.map(r => ({ url: r.url, caption: r.caption, clickHandler: (e:MouseEvent, u:string)=>this.navigation_anchor_clicked(e, u) }));
+      render(MenuTemplate(mapped, /*menuIconRef*/ null, /*dropdownRef*/ this.list, /*toggleHandler*/ (e:MouseEvent)=>this.ToggleHamburgerMenu()), container)
+    }catch(err){
+      render(this.Template, container)
+    }
   }
 
   public ToggleHamburgerMenu(){

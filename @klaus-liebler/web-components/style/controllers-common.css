@@ -1,0 +1,71 @@
+/* Gemeinsame Basisregeln für Controller-Container:
+   - body/main sollen kein Padding/Margin haben
+   - jeder controller-spezifische Container füllt den Viewport und verwaltet Scroll/Overflow selbst
+*/
+
+:root, html, body, main {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+}
+
+/* Default container-alias (für Controller: benutze die spezifische Klasse, z.B. .recipe-editor-container) */
+.default-container,
+.dashboard-container,
+.recipe-editor-container,
+.analytics-container,
+.combined-settings,
+.settings-container,
+.live-view-wrapper {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;           /* Controller entscheidet eigenes inneres Padding */
+  width: 100vw;
+  height: 100vh;
+  position: relative;   /* im normalen Fluss; Controller-Inhalte bleiben in flow */
+  overflow: auto;       /* Controller-Inhalt scrollbar falls nötig */
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Wenn du ein element möchtest, das absolut über den kompletten Viewport liegt, 
+   dann kann der Controller .full-bleed verwenden: */
+.full-bleed {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  z-index: 100;
+}
+
+/* CombinedSettings: kleine Hilfsregeln */
+.combined-settings .settings-section {
+  width: 100%;
+  margin-bottom: 12px;
+}
+
+.combined-settings .settings-content {
+  padding: 0; /* Controller entscheidet, falls Innenabstand gewünscht */
+}
+
+/* Modal / Loader (gemeinsam genutzt) */
+.modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+}
+
+.modal .loader { display: inline-block; }
+
+/* Defensive: wenn Menu fixed/absolute ist, soll es nicht vom Controller überdeckt werden falls nötig */
+nav, .nav-menu-icon, .nav-dropdown {
+  z-index: 2100;
+}

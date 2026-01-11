@@ -5,8 +5,8 @@ import * as flatbuffers from 'flatbuffers';
 import { BooleanItemRT, ConfigGroup, ConfigItemRT, EnumItemRT, IntegerItemRT, StringItemRT, ValueUpdater } from "@klaus-liebler/usersettings_runtime";
 import { TemplateResult, html, render } from "lit-html";
 import { Ref, createRef, ref } from "lit-html/directives/ref.js";
-import { IAppManagement } from "../utils/interfaces";
-import { OkDialog } from "../dialog_controller";
+import { IAppManagement } from "../utils/interfaces.ts";
+import { OkDialog } from "../dialog_controller.ts";
 import { Severity } from "@klaus-liebler/commons";
 
 

@@ -1,0 +1,227 @@
+/* Combined Settings — überarbeitetes Design: Karten, Tabellen-Streifen, Buttons, Breiten-Limitierung */
+
+/* Basiscontainer (auch Fallback wenn noch "screen-container combined-settings" verwendet wird) */
+.combined-settings,
+.screen-container.combined-settings {
+  background: var(--color-bg);
+  color: var(--text);
+  padding: 20px;
+  box-sizing: border-box;
+  /* Zentrierter Inhalt mit max-width, nicht full-bleed wie LiveView */
+  display: block;
+}
+
+/* Inhalt-Wrapper: begrenzt die Breite wie andere non-live controller */
+.combined-settings > .content,
+.screen-container.combined-settings > .content,
+.combined-settings > h1,
+.combined-settings > details {
+  max-width: 980px;
+  margin-left: auto;
+  margin-right: auto;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Page Titel */
+.combined-settings > h1,
+.screen-container.combined-settings > h1 {
+  font-size: 1.6rem;
+  margin: 0 0 18px 0;
+  color: var(--caput);
+  font-weight: 700;
+  letter-spacing: 0.2px;
+}
+
+/* Details / Section Card */
+.combined-settings .settings-section,
+.screen-container.combined-settings .settings-section {
+  background: var(--color-panel);
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  padding: 12px 16px;
+  box-shadow: var(--shadow);
+  margin-bottom: 16px;
+  overflow: visible;
+}
+
+/* Summary / Header */
+.combined-settings summary {
+  list-style: none;
+  cursor: pointer;
+  margin: 0 0 8px 0;
+}
+.combined-settings summary h2 {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--caput);
+}
+
+/* Content inside the section */
+.combined-settings .settings-content {
+  padding: 8px 0 0 0;
+  margin: 0;
+  display: block;
+  gap: 12px;
+}
+
+/* Tables: full width inside card, with alternating row colors */
+.combined-settings table,
+.combined-settings table th,
+.combined-settings table td,
+.screen-container.combined-settings table,
+.screen-container.combined-settings table th,
+.screen-container.combined-settings table td {
+  border-collapse: collapse;
+  width: 100%;
+  box-sizing: border-box;
+  font-size: 0.95rem;
+}
+
+.combined-settings table th,
+.screen-container.combined-settings table th {
+  text-align: left;
+  padding: 8px 10px;
+  background: rgba(0,0,0,0.04);
+  color: var(--caput);
+  font-weight: 700;
+  border-bottom: 1px solid rgba(0,0,0,0.06);
+}
+
+.combined-settings table td,
+.screen-container.combined-settings table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid rgba(0,0,0,0.04);
+}
+
+/* Alternating row colors */
+.combined-settings table tbody tr:nth-child(odd),
+.screen-container.combined-settings table tbody tr:nth-child(odd) {
+  background: #ffffff;
+}
+.combined-settings table tbody tr:nth-child(even),
+.screen-container.combined-settings table tbody tr:nth-child(even) {
+  background: #f5f5f7;
+}
+
+/* Small badges / status cells */
+.combined-settings td[style*="background-color"],
+.screen-container.combined-settings td[style*="background-color"] {
+  color: #fff;
+  padding: 6px 10px;
+  border-radius: 4px;
+  display: inline-block;
+}
+
+/* Buttons: standard .btn + legacy input buttons */
+.combined-settings .btn,
+.screen-container.combined-settings .btn,
+.combined-settings .buttons input[type="button"],
+.screen-container.combined-settings .buttons input[type="button"],
+.combined-settings input[type="button"],
+.screen-container.combined-settings input[type="button"] {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  /* fallback colors in case variables are missing */
+  background: linear-gradient(180deg, var(--color-button, #998888), var(--color-button-hover, #BFB8AD));
+  color: var(--white, #fff);
+  border: 1px solid rgba(0,0,0,0.06);
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 700;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.06);
+}
+
+.combined-settings input[type="button"].secondary,
+.combined-settings .btn.secondary,
+.screen-container.combined-settings input[type="button"].secondary,
+.screen-container.combined-settings .btn.secondary {
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--color-border);
+  font-weight: 600;
+  box-shadow: none;
+}
+
+/* Hover polish */
+.combined-settings .btn:hover,
+.combined-settings input[type="button"]:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.08);
+}
+
+/* Disabled inputs/buttons */
+.combined-settings input[disabled],
+.combined-settings input[disabled][type="button"],
+.combined-settings .btn[disabled] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Accordion (usersettings) improvements */
+.combined-settings .accordion {
+  margin: 8px 0;
+  border-radius: 8px;
+  overflow: hidden;
+  background: linear-gradient(180deg, rgba(255,255,255,0.95), var(--color-panel));
+  border: 1px solid rgba(0,0,0,0.03);
+}
+
+.combined-settings .accordion > button {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px;
+  background: transparent;
+  border: none;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.combined-settings .accordion > button span:first-child {
+  display:inline-flex;
+  width:20px;
+  justify-content:center;
+}
+
+/* inner table in accordion */
+.combined-settings .accordion table {
+  margin: 8px 0 0 0;
+  width: 100%;
+}
+
+.combined-settings .accordion input[type="text"],
+.combined-settings .accordion input[type="number"],
+.combined-settings .accordion select {
+  padding: 8px;
+  border-radius: 6px;
+  border: 1px solid var(--color-input-border);
+  background: var(--color-input-bg);
+}
+
+/* Actions area alignment */
+.combined-settings .actions {
+  margin-top: 8px;
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+/* Small helper text */
+.combined-settings .small-note {
+  font-size: 0.85rem;
+  color: var(--cinereous);
+}
+
+/* Focus styles */
+.combined-settings input:focus,
+.combined-settings select:focus,
+.combined-settings textarea:focus,
+.combined-settings .btn:focus {
+  outline: 3px solid rgba(166,212,159,0.25);
+  outline-offset: 2px;
+}

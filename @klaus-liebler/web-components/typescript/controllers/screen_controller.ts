@@ -2,6 +2,11 @@ import * as flatbuffers from 'flatbuffers';
 import { TemplateResult, html } from "lit-html";
 import { IAppManagement, IWebsocketMessageListener } from "../utils/interfaces";
 
+// Shared controller-level styles: every concrete ScreenController gets these baseline rules.
+import "../../style/variables.css";
+import "../../style/controllers-common.css";
+import "../../style/loader.css";
+
 export enum ControllerState {
     CREATED,
     STARTED,

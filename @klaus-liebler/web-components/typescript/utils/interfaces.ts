@@ -1,8 +1,8 @@
 
 import * as flatbuffers from "flatbuffers";
-import { DialogController } from "../dialog_controller";
+import { DialogController } from "../dialog_controller.ts";
 import { TemplateResult } from "lit-html";
-import { ScreenController } from "../screen_controller/screen_controller";
+import { ScreenController } from "../controllers/screen_controller";
 import { Severity } from "@klaus-liebler/commons";
 
 export interface IDialogController____ {
