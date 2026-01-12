@@ -1,42 +1,45 @@
 import { html, TemplateResult } from "lit-html";
+import { Ref, createRef, ref } from "lit-html/directives/ref.js";
 import "../../style/analytics.css";
 import { ScreenController } from "./screen_controller";
 import { AppController } from "../app_controller";
+import { renderAnalytics } from "../recipe_management";
+import * as flatbuffers from 'flatbuffers';
 
 export class AnalyticsController extends ScreenController {
+    private containerRef: Ref<HTMLDivElement> = createRef();
+
     constructor(app: AppController) {
         super(app);
     }
 
     public Template(): TemplateResult<1> {
-        return html`
-            <div class="analytics-container">
-                <h1>Diagramme & Messwerte</h1>
-                <div class="analytics-view">
-                    <p>Aufgezeichnete Messwerte und Diagramme</p>
-                    <!-- Diagramme mit Chart.js oder ähnlich -->
-                </div>
-            </div>
-        `;
+        return html`<div ${ref(this.containerRef)} class="analytics-wrapper"></div>`;
     }
 
     public OnCreate(): void {
-        // Initialisierung
+        // WebSocket registration happens in AppController
     }
 
     protected OnFirstStart(): void {
-        // Historische Daten laden beim ersten Start
+        const container = this.containerRef.value;
+        if (container) {
+            renderAnalytics(container);
+        }
     }
 
     protected OnRestart(): void {
-        // Beim Neustart nach Pause
+        const container = this.containerRef.value;
+        if (container) {
+            renderAnalytics(container);
+        }
     }
 
     public OnPause(): void {
-        // Beim Pausieren
+        // Renderer is persistent, nothing to cleanup
     }
 
-    public OnMessage(namespace: number, bb: any): void {
-        // WebSocket-Nachrichten verarbeiten
+    public OnMessage(namespace: number, bb: flatbuffers.ByteBuffer): void {
+        // Handled by AppController
     }
 }

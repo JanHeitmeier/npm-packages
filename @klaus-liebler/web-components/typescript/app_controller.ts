@@ -5,6 +5,7 @@ import { Ref, createRef, ref } from "lit-html/directives/ref.js";
 import * as flatbuffers from "flatbuffers";
 import { DialogController, OkDialog } from "./dialog_controller.ts";
 import { DefaultScreenController, ScreenController } from "./controllers/screen_controller.ts";
+import { DashboardController } from "./controllers/DashboardController";
 import { LiveViewController } from "./controllers/LiveViewController";
 import { RecipeEditorController } from "./controllers/RecipeEditorController";
 import { AnalyticsController } from "./controllers/AnalyticsController";
@@ -15,6 +16,13 @@ import { IAppManagement, IScreenControllerHost, IWebsocketMessageListener } from
 import RouterMenu, { IRouteHandler, Route } from "./utils/routermenu";
 import {ArrayBufferToHexString} from "@klaus-liebler/commons"
 import * as cfg from "@generated/runtimeconfig_ts"
+import { setupRecipeManagement, receiveMessage, type CommandDto } from "./recipe_management";
+import { ResponseWrapper } from "@generated/flatbuffers_ts/recipemanagement/response-wrapper";
+import { ResponseJson } from "@generated/flatbuffers_ts/recipemanagement/response-json";
+import { RequestJson } from "@generated/flatbuffers_ts/recipemanagement/request-json";
+import { JsonPayload } from "@generated/flatbuffers_ts/recipemanagement/json-payload";
+import { RequestWrapper } from "@generated/flatbuffers_ts/recipemanagement/request-wrapper";
+import { Requests } from "@generated/flatbuffers_ts/recipemanagement/requests";
 
 
 class Router2ContentAdapter implements IRouteHandler {
@@ -118,6 +126,34 @@ export class AppController implements IAppManagement, IScreenControllerHost {
     }
   }
 
+  // ========== Recipe Management Command Sender ==========
+  private sendRecipeCommand(cmd: CommandDto): void {
+    const builder = new flatbuffers.Builder(256);
+    
+    // Serialize CommandDto to JSON
+    const jsonStr = JSON.stringify(cmd);
+    const jsonOffset = builder.createString(jsonStr);
+    
+    // Build FlatBuffers: CommandDto → JsonPayload → RequestJson → RequestWrapper
+    JsonPayload.startJsonPayload(builder);
+    JsonPayload.addJson(builder, jsonOffset);
+    const payloadOffset = JsonPayload.endJsonPayload(builder);
+    
+    RequestJson.startRequestJson(builder);
+    RequestJson.addPayload(builder, payloadOffset);
+    const requestJsonOffset = RequestJson.endRequestJson(builder);
+    
+    RequestWrapper.startRequestWrapper(builder);
+    RequestWrapper.addRequestType(builder, Requests.RequestJson);
+    RequestWrapper.addRequest(builder, requestJsonOffset);
+    const wrapperOffset = RequestWrapper.endRequestWrapper(builder);
+    
+    builder.finish(wrapperOffset);
+    
+    // Send via WebSocket with Namespace 11
+    this.SendFinishedBuilder(11, builder);
+  }
+
   private onWebsocketData(arrayBuffer: ArrayBuffer) {
     const dataView = new DataView(arrayBuffer);
     const namespace = dataView.getUint32(0, true);
@@ -196,6 +232,36 @@ export class AppController implements IAppManagement, IScreenControllerHost {
 
   
   public Startup() {
+    // ========== Recipe Management Setup (ONCE) ==========
+    setupRecipeManagement({
+      sendMessage: (cmd: CommandDto) => this.sendRecipeCommand(cmd),
+      registerWebSocket: (namespace: number, handler: (data: any) => void) => {
+        // Register for Namespace 11
+        this.RegisterWebsocketMessageNamespace({
+          OnMessage: (namespace: number, bb: flatbuffers.ByteBuffer) => {
+            const wrapper = ResponseWrapper.getRootAsResponseWrapper(bb);
+            const responseType = wrapper.responseType();
+            
+            if (responseType === 1) { // ResponseJson is type 1
+              const response = wrapper.response(new ResponseJson());
+              if (response && response.payload()) {
+                const jsonStr = response.payload()!.json();
+                if (jsonStr) {
+                  try {
+                    const jsonObj = JSON.parse(jsonStr);
+                    handler(jsonObj); // Call receiveMessage
+                  } catch (e) {
+                    console.error("Failed to parse Recipe Management JSON:", e);
+                  }
+                }
+              }
+            }
+          }
+        }, namespace);
+      }
+    });
+    console.log("Recipe Management initialized in AppController");
+
     const menuIconRef: Ref<HTMLDivElement> = createRef();
 
     const updateMenuIcon = () => {
@@ -213,8 +279,8 @@ export class AppController implements IAppManagement, IScreenControllerHost {
     this.AddScreenController(
       "/",
       /^\/$/,
-      html`<span>Dashboard</span>`,
-      new DefaultScreenController(this)
+      html`<span>📊</span><span>Dashboard</span>`,
+      new DashboardController(this)
     );
 
     this.AddScreenController(

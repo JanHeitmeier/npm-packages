@@ -24,9 +24,10 @@
       "baseUrl": ".",
       "paths": {
         "@generated/usersettings_ts/*": ["../../generated/usersettings_ts/*"],
-        "@generated/runtimeconfig_ts/*": ["../../generated/runtimeconfig_ts/*"]
+        "@generated/runtimeconfig_ts/*": ["../../generated/runtimeconfig_ts/*"],
+        "@generated/flatbuffers_ts/*": ["../../generated/flatbuffers_ts/*"]
       }
     },
-    "include": ["reciepe", "controllers", "../generated/usersettings_ts", "../generated/runtimeconfig_ts"]
+    "include": ["typescript", "../../generated/usersettings_ts", "../../generated/runtimeconfig_ts", "../../generated/flatbuffers_ts"]
   }
   

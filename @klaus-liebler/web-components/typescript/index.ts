@@ -10,6 +10,10 @@ export * from "./controllers/wifimanager_controller.ts"
 export * from "./controllers/LiveViewController"
 export * from "./controllers/RecipeEditorController"
 export * from "./controllers/AnalyticsController"
+export * from "./controllers/DashboardController"
 export * from "./controllers/CombinedSettingsController"
 export * from "./templates/menu_template"
 export * from "./templates/liveview_template"
+
+// Recipe Management Library (standalone, framework-independent)
+export * from "./recipe_management"
