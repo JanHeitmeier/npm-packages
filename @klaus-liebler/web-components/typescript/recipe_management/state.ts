@@ -52,18 +52,24 @@ export class RecipeState {
     }
 
     setAvailableRecipes(data: AvailableRecipesDto): void {
+        console.log('[RecipeState] setAvailableRecipes called with', data.recipes?.length || 0, 'recipes');
         this.availableRecipes = data;
         this.notifyListeners();
+        console.log('[RecipeState] Listeners notified');
     }
 
     setAvailableSteps(data: AvailableStepsDto): void {
+        console.log('[RecipeState] setAvailableSteps called with', data.steps?.length || 0, 'steps');
         this.availableSteps = data;
         this.notifyListeners();
+        console.log('[RecipeState] Listeners notified');
     }
 
     setCurrentRecipe(data: RecipeDto): void {
+        console.log('[RecipeState] setCurrentRecipe called:', data.name || data.id || 'Unknown');
         this.currentRecipe = data;
         this.notifyListeners();
+        console.log('[RecipeState] Listeners notified');
     }
 
     setMetrics(data: MetricsDto): void {

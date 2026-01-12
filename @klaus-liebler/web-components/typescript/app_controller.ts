@@ -239,16 +239,21 @@ export class AppController implements IAppManagement, IScreenControllerHost {
         // Register for Namespace 11
         this.RegisterWebsocketMessageNamespace({
           OnMessage: (namespace: number, bb: flatbuffers.ByteBuffer) => {
+            console.log(`[AppController] Recipe Management message received, namespace: ${namespace}`);
             const wrapper = ResponseWrapper.getRootAsResponseWrapper(bb);
             const responseType = wrapper.responseType();
+            
+            console.log(`[AppController] Response type: ${responseType}`);
             
             if (responseType === 1) { // ResponseJson is type 1
               const response = wrapper.response(new ResponseJson());
               if (response && response.payload()) {
                 const jsonStr = response.payload()!.json();
                 if (jsonStr) {
+                  console.log(`[AppController] Received JSON (${jsonStr.length} chars):`, jsonStr.substring(0, 200));
                   try {
                     const jsonObj = JSON.parse(jsonStr);
+                    console.log(`[AppController] Parsed JSON successfully, calling handler with:`, jsonObj);
                     handler(jsonObj); // Call receiveMessage
                   } catch (e) {
                     console.error("Failed to parse Recipe Management JSON:", e);

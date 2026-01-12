@@ -1,6 +1,7 @@
 import { html, TemplateResult } from "lit-html";
 import { Ref, createRef, ref } from "lit-html/directives/ref.js";
 import "../../style/recipe-editor.css";
+import "../../style/recipe-editor-grid.css";
 import { ScreenController } from "./screen_controller";
 import { AppController } from "../app_controller";
 import { renderEditor } from "../recipe_management";

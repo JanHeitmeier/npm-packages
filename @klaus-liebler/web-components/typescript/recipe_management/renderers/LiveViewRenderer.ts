@@ -43,17 +43,17 @@ export class LiveViewRenderer implements ViewHandle {
                     <div class="live-title">Live View</div>
                     <div class="live-details">
                         <h2>Details</h2>
-                        <div class="details-content">Warte auf Rezept-Start...</div>
+                        <div class="details-content">Waiting for recipe start...</div>
                     </div>
                     <div class="live-progress-bar"></div>
                     <div class="live-recipe-row">
                         <div class="recipe-steps">
-                            <div class="step-box">Kein Rezept aktiv</div>
+                            <div class="step-box">No recipe active</div>
                         </div>
                     </div>
                     <div class="live-sensors">
-                        <h2>Sensoren</h2>
-                        <div class="sensors-content">Keine Daten</div>
+                        <h2>Sensors</h2>
+                        <div class="sensors-content">No data</div>
                     </div>
                     <div class="control-buttons">
                         <button class="control-btn" disabled>▶</button>
@@ -61,11 +61,11 @@ export class LiveViewRenderer implements ViewHandle {
                         <button class="control-btn" disabled>⏹</button>
                     </div>
                     <div class="live-instructions">
-                        <h3>Anweisungen</h3>
+                        <h3>Instructions</h3>
                         <div class="instructions-content"></div>
                     </div>
                     <div class="live-acknowledge">
-                        <h3>Quittieren</h3>
+                        <h3>Acknowledge</h3>
                         <div class="status-buttons">
                             <button class="status-btn" disabled>✓</button>
                             <button class="status-btn" disabled>✗</button>
@@ -90,9 +90,9 @@ export class LiveViewRenderer implements ViewHandle {
                 <div class="live-details">
                     <h2>Details</h2>
                     <div class="details-content">
-                        Rezept ID: ${this.escapeHtml(liveView.recipeId)}<br>
-                        Schritt: ${liveView.currentStepIndex + 1} / ${liveView.totalSteps}<br>
-                        Fortschritt: ${Math.round(liveView.progress * 100)}%
+                        Recipe ID: ${this.escapeHtml(liveView.recipeId)}<br>
+                        Step: ${liveView.currentStepIndex + 1} / ${liveView.totalSteps}<br>
+                        Progress: ${Math.round(liveView.progress * 100)}%
                     </div>
                 </div>
 
@@ -107,7 +107,7 @@ export class LiveViewRenderer implements ViewHandle {
                 </div>
 
                 <div class="live-sensors">
-                    <h2>Sensoren</h2>
+                    <h2>Sensors</h2>
                     <div class="sensors-content">
                         ${this.renderSensors(liveView.sensorValues)}
                     </div>
@@ -118,18 +118,18 @@ export class LiveViewRenderer implements ViewHandle {
                 </div>
 
                 <div class="live-instructions">
-                    <h3>Anweisungen</h3>
+                    <h3>Instructions</h3>
                     <div class="instructions-content">
-                        ${liveView.userInstruction ? this.escapeHtml(liveView.userInstruction) : 'Keine Anweisungen'}
+                        ${liveView.userInstruction ? this.escapeHtml(liveView.userInstruction) : 'No instructions'}
                     </div>
                 </div>
 
                 <div class="live-acknowledge">
-                    <h3>Quittieren</h3>
+                    <h3>Acknowledge</h3>
                     <div class="status-buttons">
                         ${liveView.awaitingUserAcknowledgment ? `
                             <button class="status-btn ack-ok" data-action="acknowledge">✓ OK</button>
-                            <button class="status-btn ack-cancel" data-action="stop">✗ Abbrechen</button>
+                            <button class="status-btn ack-cancel" data-action="stop">✗ Cancel</button>
                         ` : `
                             <button class="status-btn" disabled>✓</button>
                             <button class="status-btn" disabled>✗</button>
@@ -140,7 +140,7 @@ export class LiveViewRenderer implements ViewHandle {
                 <div class="live-status">
                     <h3>Status</h3>
                     <div class="status-content">
-                        ${liveView.errorMessage ? this.escapeHtml(liveView.errorMessage) : 'Aktiv'}
+                        ${liveView.errorMessage ? this.escapeHtml(liveView.errorMessage) : 'Active'}
                     </div>
                 </div>
             </div>
@@ -158,7 +158,7 @@ export class LiveViewRenderer implements ViewHandle {
             
             steps.push(`
                 <div class="${stepClass}">
-                    Schritt ${i + 1}
+                    Step ${i + 1}
                     ${isCurrent ? `<br><small>${this.escapeHtml(liveView.currentStepName)}</small>` : ''}
                 </div>
             `);
@@ -169,7 +169,7 @@ export class LiveViewRenderer implements ViewHandle {
     private renderSensors(sensorValues: Record<string, number>): string {
         const entries = Object.entries(sensorValues);
         if (entries.length === 0) {
-            return '<p>Keine Sensor-Daten verfügbar</p>';
+            return '<p>No sensor data available</p>';
         }
 
         return entries.map(([name, value]) => `
@@ -190,11 +190,11 @@ export class LiveViewRenderer implements ViewHandle {
             `;
         } else if (status === 'paused') {
             return `
-                <button class="control-btn" data-action="resume">▶ Fortsetzen</button>
+                <button class="control-btn" data-action="resume">▶ Resume</button>
                 <button class="control-btn" data-action="stop">⏹ Stop</button>
             `;
         } else {
-            return '<p>Rezept nicht aktiv</p>';
+            return '<p>Recipe not active</p>';
         }
     }
 

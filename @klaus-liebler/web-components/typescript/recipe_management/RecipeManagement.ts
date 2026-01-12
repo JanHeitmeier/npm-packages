@@ -89,10 +89,10 @@ export function setupRecipeManagement(config: RecipeManagementConfig): void {
     analyticsRenderer = new AnalyticsRenderer(document.createElement('div'));
 
     // Set send functions
-    liveViewRenderer.setSendFunction(globalSendFunction);
-    dashboardRenderer.setSendFunction(globalSendFunction);
-    editorRenderer.setSendFunction(globalSendFunction);
-    analyticsRenderer.setSendFunction(globalSendFunction);
+    liveViewRenderer.setSendFunction(sendCommand);
+    dashboardRenderer.setSendFunction(sendCommand);
+    editorRenderer.setSendFunction(sendCommand);
+    analyticsRenderer.setSendFunction(sendCommand);
 
     // Apply CSS overrides if provided
     if (config.cssOverrides) {
@@ -140,45 +140,60 @@ function importRecipeManagementStyles(): void {
  * @param jsonMessage JSON string or parsed object containing the message
  */
 export function receiveMessage(jsonMessage: string | any): void {
+    console.log('%c[RecipeManagement] ⬇️ EMPFANGEN:', 'color: #4CAF50; font-weight: bold', jsonMessage);
     let message: any;
 
     if (typeof jsonMessage === 'string') {
         try {
             message = JSON.parse(jsonMessage);
+            console.log('%c[RecipeManagement] ⬇️ Parsed JSON:', 'color: #4CAF50', message);
         } catch (error) {
-            console.error('Failed to parse message:', error);
+            console.error('[RecipeManagement] Failed to parse message:', error);
             return;
         }
     } else {
         message = jsonMessage;
     }
 
+    console.log('[RecipeManagement] Processing message:', message);
+
     // Auto-detect message type and route to state
     if (message.type) {
+        console.log('[RecipeManagement] Message has type:', message.type);
         routeTypedMessage(message);
     } else {
+        console.log('[RecipeManagement] Message has no type, inferring...');
         // Try to infer type from structure
         routeUntypedMessage(message);
     }
 }
 
 function routeTypedMessage(message: any): void {
+    console.log('[RecipeManagement] routeTypedMessage:', message.type);
     switch (message.type) {
         case 'LiveViewDto':
-            recipeState.setLiveView(message.data);
+        case 'liveview':
+            recipeState.setLiveView(message.data || message);
             break;
         case 'AvailableRecipesDto':
         case 'RecipeListDto':
-            recipeState.setAvailableRecipes(message.data);
+        case 'available_recipes':
+            console.log('[RecipeManagement] Setting available recipes with', message.recipes?.length || 0, 'recipes');
+            recipeState.setAvailableRecipes(message.data || message);
             break;
         case 'AvailableStepsDto':
-            recipeState.setAvailableSteps(message.data);
+        case 'available_steps':
+            console.log('[RecipeManagement] Setting available steps with', message.steps?.length || 0, 'steps');
+            recipeState.setAvailableSteps(message);
             break;
         case 'RecipeDto':
-            recipeState.setCurrentRecipe(message.data);
+        case 'recipe':
+            console.log('[RecipeManagement] Setting current recipe:', message.name || 'Unknown');
+            recipeState.setCurrentRecipe(message.data || message);
             break;
         case 'MetricsDto':
-            recipeState.setMetrics(message.data);
+        case 'metrics':
+            recipeState.setMetrics(message.data || message);
             break;
         default:
             console.warn('Unknown message type:', message.type);
@@ -186,19 +201,25 @@ function routeTypedMessage(message: any): void {
 }
 
 function routeUntypedMessage(message: any): void {
+    console.log('[RecipeManagement] routeUntypedMessage, analyzing structure:', Object.keys(message));
     // Infer type from structure
     if (message.recipeStatus && message.currentStepIndex !== undefined) {
+        console.log('[RecipeManagement] Detected as LiveViewDto');
         recipeState.setLiveView(message);
     } else if (message.recipes && Array.isArray(message.recipes)) {
+        console.log('[RecipeManagement] Detected as AvailableRecipesDto');
         recipeState.setAvailableRecipes(message);
     } else if (message.steps && Array.isArray(message.steps) && message.steps[0]?.typeId) {
+        console.log('[RecipeManagement] Detected as AvailableStepsDto with', message.steps.length, 'steps');
         recipeState.setAvailableSteps(message);
     } else if (message.id && message.name && message.steps) {
+        console.log('[RecipeManagement] Detected as RecipeDto');
         recipeState.setCurrentRecipe(message);
     } else if (message.series && Array.isArray(message.series)) {
+        console.log('[RecipeManagement] Detected as MetricsDto');
         recipeState.setMetrics(message);
     } else {
-        console.warn('Could not infer message type from structure:', message);
+        console.warn('[RecipeManagement] Could not infer message type from structure:', message);
     }
 }
 
@@ -266,6 +287,7 @@ export function sendCommand(command: CommandDto): void {
     if (!globalSendFunction) {
         throw new Error('Recipe Management not initialized. Call setupRecipeManagement() first.');
     }
+    console.log('%c[RecipeManagement] ⬆️ SENDEN:', 'color: #FF9800; font-weight: bold', command);
     globalSendFunction(command);
 }
 

@@ -1,0 +1,506 @@
+/* Recipe Editor Grid Layout - Similar to LiveView */
+
+.recipe-mgmt-editor {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    margin: 0;
+    padding: 0;
+}
+
+.editor-grid-container {
+    width: 100vw;
+    height: 100vh;
+    display: grid;
+    grid-template-columns: repeat(10, 1fr);
+    grid-template-rows: 80px 1fr;
+    overflow: hidden;
+    padding: 0;
+    margin: 0;
+    box-sizing: border-box;
+}
+
+/* Header - Title and Actions */
+.editor-title {
+    grid-column: 1 / 4;
+    grid-row: 1;
+    background: #667eea;
+    border: 1px solid #2c3e50;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+}
+
+.editor-title h1 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: bold;
+}
+
+.editor-actions {
+    grid-column: 4 / 11;
+    grid-row: 1;
+    background: #f0f0f0;
+    border: 1px solid #2c3e50;
+    border-left: none;
+    padding: 10px;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    justify-content: flex-end;
+}
+
+/* Recipe Details - Fixed, non-scrollable */
+.editor-details {
+    grid-column: 1 / 4;
+    grid-row: 2;
+    background: #f8f8f8;
+    border: 1px solid #2c3e50;
+    border-top: none;
+    padding: 15px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.editor-details h2 {
+    margin: 0 0 15px 0;
+    font-size: 1.2rem;
+    color: #333;
+}
+
+.details-form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.form-group label {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: #555;
+}
+
+.form-group input,
+.form-group textarea {
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 0.9rem;
+}
+
+.form-group textarea {
+    resize: vertical;
+    min-height: 60px;
+}
+
+/* Steps List - Scrollable */
+.editor-steps-list {
+    grid-column: 4 / 7;
+    grid-row: 2;
+    background: #fff;
+    border: 1px solid #2c3e50;
+    border-top: none;
+    border-left: none;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.steps-list-header {
+    padding: 15px;
+    background: #f0f0f0;
+    border-bottom: 1px solid #ddd;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.steps-list-header h2 {
+    margin: 0;
+    font-size: 1.2rem;
+    color: #333;
+}
+
+.steps-list-content {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 10px;
+}
+
+.step-item {
+    background: white;
+    border: 2px solid #ddd;
+    border-radius: 6px;
+    padding: 12px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.step-item:hover {
+    border-color: #667eea;
+    background: #f8f9ff;
+}
+
+.step-item.selected {
+    border-color: #667eea;
+    background: #e8ecff;
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+}
+
+.step-item-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+}
+
+.step-number {
+    background: #667eea;
+    color: white;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    flex-shrink: 0;
+}
+
+.step-type-name {
+    flex: 1;
+    font-weight: 500;
+    color: #333;
+}
+
+.step-actions {
+    display: flex;
+    gap: 4px;
+}
+
+.step-category {
+    display: inline-block;
+    padding: 2px 8px;
+    background: #e0e0e0;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    color: #666;
+}
+
+/* Step Parameters - Scrollable on overflow */
+.editor-step-parameters {
+    grid-column: 7 / 11;
+    grid-row: 2;
+    background: #f8f8f8;
+    border: 1px solid #2c3e50;
+    border-top: none;
+    border-left: none;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.parameters-header {
+    padding: 15px;
+    background: #f0f0f0;
+    border-bottom: 1px solid #ddd;
+    flex-shrink: 0;
+}
+
+.parameters-header h2 {
+    margin: 0;
+    font-size: 1.2rem;
+    color: #333;
+}
+
+.parameters-content {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 15px;
+}
+
+.parameter-item {
+    margin-bottom: 15px;
+}
+
+.parameter-item label {
+    display: block;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: #555;
+    margin-bottom: 4px;
+}
+
+/* New wider parameter layout */
+.parameter-item-wide {
+    margin-bottom: 20px;
+    padding: 15px;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    background: #fafafa;
+}
+
+.parameter-label-section {
+    margin-bottom: 10px;
+}
+
+.parameter-label-section label {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #333;
+}
+
+.parameter-input-section {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.parameter-input-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.parameter-input-group input {
+    flex: 1;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 1rem;
+    background: white;
+}
+
+.parameter-unit {
+    flex-shrink: 0;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #555;
+    min-width: 50px;
+    padding: 8px 12px;
+    background: #e8eaf6;
+    border-radius: 4px;
+}
+
+.parameter-description {
+    font-size: 0.85rem;
+    color: #666;
+    font-style: italic;
+}
+
+.parameter-limits {
+    font-size: 0.85rem;
+    color: #2196F3;
+    font-weight: 500;
+}
+
+.parameter-item input,
+.parameter-item select {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 0.9rem;
+}
+
+.parameter-description {
+    font-size: 0.85rem;
+    color: #666;
+    font-style: italic;
+}
+
+.parameter-limits {
+    font-size: 0.85rem;
+    color: #2196F3;
+    font-weight: 500;
+}
+
+.no-step-selected {
+    padding: 20px;
+    text-align: center;
+    color: #999;
+}
+
+.empty-steps {
+    padding: 20px;
+    text-align: center;
+    color: #999;
+}
+
+/* Buttons */
+.btn-primary,
+.btn-secondary,
+.btn-success,
+.btn-danger,
+.btn-icon {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.2s;
+}
+
+.btn-primary {
+    background: #667eea;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #5568d3;
+}
+
+.btn-secondary {
+    background: #e0e0e0;
+    color: #333;
+}
+
+.btn-secondary:hover {
+    background: #d0d0d0;
+}
+
+.btn-success {
+    background: #4CAF50;
+    color: white;
+}
+
+.btn-success:hover {
+    background: #45a049;
+}
+
+.btn-danger {
+    background: #f44336;
+    color: white;
+}
+
+.btn-danger:hover {
+    background: #da190b;
+}
+
+.btn-icon {
+    width: 32px;
+    height: 32px;
+    padding: 4px;
+    background: #e0e0e0;
+    font-size: 1rem;
+}
+
+.btn-icon:hover {
+    background: #d0d0d0;
+}
+
+.btn-icon:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Step Selector Modal */
+.step-selector-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+}
+
+.step-selector-modal.active {
+    display: flex;
+}
+
+.step-selector-content {
+    background: white;
+    border-radius: 8px;
+    width: 80%;
+    max-width: 1000px;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.step-selector-header {
+    padding: 20px;
+    border-bottom: 1px solid #ddd;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.step-selector-header h2 {
+    margin: 0;
+    color: #333;
+}
+
+.step-selector-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+}
+
+.step-type-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 15px;
+}
+
+.step-type-item {
+    background: white;
+    border: 2px solid #ddd;
+    border-radius: 6px;
+    padding: 15px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.step-type-item:hover {
+    border-color: #667eea;
+    background: #f8f9ff;
+    transform: translateY(-2px);
+}
+
+.step-type-item h4 {
+    margin: 0 0 8px 0;
+    color: #333;
+}
+
+.step-type-item p {
+    margin: 0 0 8px 0;
+    font-size: 0.85rem;
+    color: #666;
+}
+
+.step-type-category {
+    display: inline-block;
+    padding: 2px 8px;
+    background: #e0e0e0;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    color: #666;
+}
+
+.loading {
+    text-align: center;
+    color: #999;
+    padding: 40px;
+}

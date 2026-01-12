@@ -64,6 +64,7 @@ export interface IoAliasMetadataDto {
     ioType: 'input' | 'output' | 'sensor';
     valueType: 'bool' | 'int' | 'float';
     description: string;
+    defaultPhysicalName: string;  // Default physical resource (z.B. LED → LED0)
 }
 
 export interface StepMetadataDto {
@@ -84,6 +85,7 @@ export interface AvailableStepsDto {
 export interface StepConfigDto {
     stepTypeId: string;
     parameters: Record<string, string>;
+    aliases: Record<string, string>;  // Hardware resource aliases (z.B. LED→LED0)
     order: number;
 }
 
