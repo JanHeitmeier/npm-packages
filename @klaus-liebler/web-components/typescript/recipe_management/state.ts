@@ -1,8 +1,3 @@
-/**
- * Centralized State Management for Recipe Management
- * Handles automatic re-rendering when state changes
- */
-
 import type {
     LiveViewDto,
     AvailableRecipesDto,
@@ -21,8 +16,6 @@ export class RecipeState {
     private metrics: MetricsDto | null = null;
     
     private listeners: Set<StateChangeListener> = new Set();
-
-    // ========== Getters ==========
 
     getLiveView(): LiveViewDto | null {
         return this.liveView;
@@ -43,8 +36,6 @@ export class RecipeState {
     getMetrics(): MetricsDto | null {
         return this.metrics;
     }
-
-    // ========== Setters (with auto-notify) ==========
 
     setLiveView(data: LiveViewDto): void {
         this.liveView = data;
@@ -77,12 +68,10 @@ export class RecipeState {
         this.notifyListeners();
     }
 
-    // ========== Listener Management ==========
 
     subscribe(listener: StateChangeListener): () => void {
         this.listeners.add(listener);
         
-        // Return unsubscribe function
         return () => {
             this.listeners.delete(listener);
         };
@@ -92,7 +81,6 @@ export class RecipeState {
         this.listeners.forEach(listener => listener());
     }
 
-    // ========== Reset ==========
 
     reset(): void {
         this.liveView = null;
@@ -104,5 +92,4 @@ export class RecipeState {
     }
 }
 
-// Global state instance
 export const recipeState = new RecipeState();

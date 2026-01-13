@@ -1,9 +1,3 @@
-/**
- * Recipe Management Library - Public API
- * 
- * Export all public functions and types for external use
- */
-
 // Main API
 export {
     setupRecipeManagement,
@@ -39,3 +33,6 @@ export type {
 
 // State (for advanced usage)
 export { recipeState, RecipeState } from './state';
+
+
+// Lit-html in Bib kontrollieren zu nutzen

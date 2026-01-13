@@ -1,15 +1,12 @@
-/**
- * Dashboard Renderer
- * Shows available recipes and allows starting them
- */
-
 import { recipeState } from '../state';
+import { escapeHtml } from '../utils';
 import type { ViewHandle } from './LiveViewRenderer';
 
 export class DashboardRenderer implements ViewHandle {
     private container: HTMLElement;
     private unsubscribe: (() => void) | null = null;
     private sendCommandFn: ((cmd: any) => void) | null = null;
+    private navigateFn: ((view: 'live' | 'dashboard' | 'editor' | 'analytics') => void) | null = null;
     private backendRecipesLoaded: boolean = false;
     private isStartConfirmModalOpen: boolean = false;
     private selectedRecipeForStart: { id: string; name: string } | null = null;
@@ -18,16 +15,16 @@ export class DashboardRenderer implements ViewHandle {
     constructor(container: HTMLElement) {
         this.container = container;
         this.container.classList.add('recipe-mgmt-dashboard');
-        
-        // Subscribe to state changes
         this.unsubscribe = recipeState.subscribe(() => this.onStateChange());
-        
-        // Request recipe list from backend on initialization (always load from machine first)
         this.loadRecipeList();
     }
 
     setSendFunction(sendFn: (cmd: any) => void): void {
         this.sendCommandFn = sendFn;
+    }
+    
+    setNavigateFunction(navigateFn: (view: 'live' | 'dashboard' | 'editor' | 'analytics') => void): void {
+        this.navigateFn = navigateFn;
     }
 
     setContainer(container: HTMLElement): void {
@@ -60,7 +57,7 @@ export class DashboardRenderer implements ViewHandle {
     private loadRecipeList(): void {
         console.log('[DashboardRenderer] Loading recipe list from backend (machine)...');
         
-        // Always request from backend first (at least once)
+
         if (!this.backendRecipesLoaded) {
             console.log('[DashboardRenderer] Requesting recipes from backend');
             this.requestRecipeList();
@@ -68,7 +65,7 @@ export class DashboardRenderer implements ViewHandle {
             return;
         }
         
-        // After backend has been loaded once, check state first
+
         const availableRecipes = recipeState.getAvailableRecipes();
         if (availableRecipes && availableRecipes.recipes && availableRecipes.recipes.length > 0) {
             console.log('[DashboardRenderer] Recipes already in state:', availableRecipes.recipes.length);
@@ -76,7 +73,7 @@ export class DashboardRenderer implements ViewHandle {
             return;
         }
         
-        // Fallback to localStorage if backend request failed
+
         try {
             const cachedRecipes = localStorage.getItem('recipe_available_recipes');
             if (cachedRecipes) {
@@ -90,7 +87,7 @@ export class DashboardRenderer implements ViewHandle {
             console.error('[DashboardRenderer] Error reading from localStorage:', error);
         }
         
-        // Request from backend again
+
         console.log('[DashboardRenderer] Requesting recipes from backend');
         this.requestRecipeList();
         this.render();
@@ -175,10 +172,10 @@ export class DashboardRenderer implements ViewHandle {
                     </div>
                     <div class="modal-body" style="padding: 20px;">
                         <p style="font-size: 16px; margin-bottom: 20px;">
-                            Do you want to start recipe <strong>"${this.escapeHtml(this.selectedRecipeForStart.name)}"</strong>?
+                            Do you want to start recipe <strong>"${escapeHtml(this.selectedRecipeForStart.name)}"</strong>?
                         </p>
                         <p style="color: #666; font-size: 14px;">
-                            ID: ${this.escapeHtml(this.selectedRecipeForStart.id)}
+                            ID: ${escapeHtml(this.selectedRecipeForStart.id)}
                         </p>
                     </div>
                     <div class="modal-footer" style="padding: 20px; border-top: 1px solid #e0e0e0; display: flex; gap: 10px; justify-content: flex-end;">
@@ -199,7 +196,7 @@ export class DashboardRenderer implements ViewHandle {
             <select id="recipe-select" style="width: 100%; padding: 8px; margin-bottom: 10px;">
                 <option value="">-- Select Recipe --</option>
                 ${availableRecipes.recipes.map((recipe: any) => `
-                    <option value="${this.escapeHtml(recipe.id)}" ${this.currentlySelectedRecipeId === recipe.id ? 'selected' : ''}>${this.escapeHtml(recipe.name)}</option>
+                    <option value="${escapeHtml(recipe.id)}" ${this.currentlySelectedRecipeId === recipe.id ? 'selected' : ''}>${escapeHtml(recipe.name)}</option>
                 `).join('')}
             </select>
             <button class="btn-primary" data-action="start" style="padding: 12px 24px; background: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; width: 100%;">▶ Start Recipe</button>
@@ -256,8 +253,11 @@ export class DashboardRenderer implements ViewHandle {
                     this.selectedRecipeForStart = null;
                     this.currentlySelectedRecipeId = '';
                     
-                    // Navigate to LiveView
-                    window.location.hash = '#liveview';
+                    // Navigate to Live View after starting recipe
+                    if (this.navigateFn) {
+                        console.log('[DashboardRenderer] Navigating to Live View');
+                        this.navigateFn('live');
+                    }
                 }
                 break;
             case 'close-start-confirm':
@@ -279,20 +279,6 @@ export class DashboardRenderer implements ViewHandle {
                 this.requestRecipeList();
                 break;
         }
-    }
-
-    private formatDate(timestamp: number): string {
-        return new Date(timestamp).toLocaleDateString('de-DE', {
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit',
-        });
-    }
-
-    private escapeHtml(text: string): string {
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
     }
 
     destroy(): void {

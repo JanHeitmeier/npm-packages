@@ -1,10 +1,5 @@
-/**
- * Live View Renderer
- * Shows real-time recipe execution status
- * Based on: liveview_template.ts and liveview.css
- */
-
 import { recipeState } from '../state';
+import { escapeHtml } from '../utils';
 import type { LiveViewDto } from '../types';
 
 export interface ViewHandle {
@@ -20,8 +15,6 @@ export class LiveViewRenderer implements ViewHandle {
     constructor(container: HTMLElement) {
         this.container = container;
         this.container.classList.add('recipe-mgmt-live-view');
-        
-        // Subscribe to state changes
         this.unsubscribe = recipeState.subscribe(() => this.render());
     }
 
@@ -83,21 +76,22 @@ export class LiveViewRenderer implements ViewHandle {
         this.container.innerHTML = `
             <div class="live-view-container">
                 <div class="live-title">
-                    ${this.escapeHtml(liveView.recipeName)} 
+                    ${escapeHtml(liveView.recipeName)} 
                     <span class="status-badge status-${liveView.recipeStatus}">${liveView.recipeStatus}</span>
                 </div>
 
                 <div class="live-details">
                     <h2>Details</h2>
                     <div class="details-content">
-                        Recipe ID: ${this.escapeHtml(liveView.recipeId)}<br>
+                        Recipe ID: ${escapeHtml(liveView.recipeId)}<br>
                         Step: ${liveView.currentStepIndex + 1} / ${liveView.totalSteps}<br>
                         Progress: ${Math.round(liveView.progress * 100)}%
                     </div>
                 </div>
 
-                <div class="live-progress-bar">
-                    <div style="width: ${liveView.progress * 100}%; height: 100%; background: #4CAF50;"></div>
+                <div class="live-progress-bar" style="position: relative;">
+                    <div class="progress-fill" style="height: ${liveView.progress * 100}%;"></div>
+                    <span class="progress-text" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 10;">${Math.round(liveView.progress * 100)}%</span>
                 </div>
 
                 <div class="live-recipe-row">
@@ -120,7 +114,7 @@ export class LiveViewRenderer implements ViewHandle {
                 <div class="live-instructions">
                     <h3>Instructions</h3>
                     <div class="instructions-content">
-                        ${liveView.userInstruction ? this.escapeHtml(liveView.userInstruction) : 'No instructions'}
+                        ${liveView.userInstruction ? escapeHtml(liveView.userInstruction) : 'No instructions'}
                     </div>
                 </div>
 
@@ -140,7 +134,7 @@ export class LiveViewRenderer implements ViewHandle {
                 <div class="live-status">
                     <h3>Status</h3>
                     <div class="status-content">
-                        ${liveView.errorMessage ? this.escapeHtml(liveView.errorMessage) : 'Active'}
+                        ${liveView.errorMessage ? escapeHtml(liveView.errorMessage) : 'Active'}
                     </div>
                 </div>
             </div>
@@ -150,16 +144,31 @@ export class LiveViewRenderer implements ViewHandle {
     }
 
     private renderSteps(liveView: LiveViewDto): string {
+        // Get current recipe to access step type IDs
+        const currentRecipe = recipeState.getCurrentRecipe();
+        const availableSteps = recipeState.getAvailableSteps();
+        
         const steps: string[] = [];
         for (let i = 0; i < liveView.totalSteps; i++) {
             const isCurrent = i === liveView.currentStepIndex;
             const isPast = i < liveView.currentStepIndex;
             const stepClass = isCurrent ? 'step-box current' : isPast ? 'step-box completed' : 'step-box';
             
+            // Try to get display name from recipe and available steps metadata
+            let stepDisplayName = `Step ${i + 1}`;
+            if (currentRecipe && currentRecipe.steps && currentRecipe.steps[i]) {
+                const stepTypeId = currentRecipe.steps[i].stepTypeId;
+                if (availableSteps && availableSteps.steps) {
+                    const stepMeta = availableSteps.steps.find(s => s.typeId === stepTypeId);
+                    if (stepMeta) {
+                        stepDisplayName = stepMeta.displayName;
+                    }
+                }
+            }
+            
             steps.push(`
                 <div class="${stepClass}">
-                    Step ${i + 1}
-                    ${isCurrent ? `<br><small>${this.escapeHtml(liveView.currentStepName)}</small>` : ''}
+                    ${escapeHtml(stepDisplayName)}
                 </div>
             `);
         }
@@ -174,7 +183,7 @@ export class LiveViewRenderer implements ViewHandle {
 
         return entries.map(([name, value]) => `
             <div class="sensor-item">
-                <span class="sensor-name">${this.escapeHtml(name)}:</span>
+                <span class="sensor-name">${escapeHtml(name)}:</span>
                 <span class="sensor-value">${value.toFixed(2)}</span>
             </div>
         `).join('');
@@ -223,12 +232,6 @@ export class LiveViewRenderer implements ViewHandle {
         if (command) {
             this.sendCommandFn({ command });
         }
-    }
-
-    private escapeHtml(text: string): string {
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
     }
 
     destroy(): void {

@@ -126,15 +126,13 @@ export class AppController implements IAppManagement, IScreenControllerHost {
     }
   }
 
-  // ========== Recipe Management Command Sender ==========
+
   private sendRecipeCommand(cmd: CommandDto): void {
     const builder = new flatbuffers.Builder(256);
-    
-    // Serialize CommandDto to JSON
+
     const jsonStr = JSON.stringify(cmd);
     const jsonOffset = builder.createString(jsonStr);
     
-    // Build FlatBuffers: CommandDto → JsonPayload → RequestJson → RequestWrapper
     JsonPayload.startJsonPayload(builder);
     JsonPayload.addJson(builder, jsonOffset);
     const payloadOffset = JsonPayload.endJsonPayload(builder);
@@ -150,7 +148,6 @@ export class AppController implements IAppManagement, IScreenControllerHost {
     
     builder.finish(wrapperOffset);
     
-    // Send via WebSocket with Namespace 11
     this.SendFinishedBuilder(11, builder);
   }
 
@@ -164,7 +161,6 @@ export class AppController implements IAppManagement, IScreenControllerHost {
       this.setModal(false)
     }
     let bb = new flatbuffers.ByteBuffer(new Uint8Array(arrayBuffer, 4))
-    //let messageWrapper = ResponseWrapper.getRootAsResponseWrapper(bb)
     const listeners = this.namespace2listener.get(namespace);
     if(!listeners ||listeners.length==0){
       console.warn(`No Listeners registered for messages with namespace ${namespace}`)
@@ -263,6 +259,21 @@ export class AppController implements IAppManagement, IScreenControllerHost {
             }
           }
         }, namespace);
+      },
+      onNavigate: (view: 'live' | 'dashboard' | 'editor' | 'analytics') => {
+        // Navigate based on view parameter
+        const routes: Record<string, string> = {
+          'live': '/live',
+          'dashboard': '/',
+          'editor': '/recipe',
+          'analytics': '/analytics'
+        };
+        const route = routes[view];
+        if (route) {
+          console.log('[AppController] Navigating to:', route);
+          window.history.pushState(null, '', route);
+          this.menu.check();
+        }
       }
     });
     console.log("Recipe Management initialized in AppController");

@@ -9,8 +9,6 @@ export class AnalyticsRenderer implements ViewHandle {
     constructor(container: HTMLElement) {
         this.container = container;
         this.container.classList.add('recipe-mgmt-analytics');
-        
-        // Subscribe to state changes
         this.unsubscribe = recipeState.subscribe(() => this.render());
     }
 
@@ -29,17 +27,6 @@ export class AnalyticsRenderer implements ViewHandle {
                 Analytics coming soon
             </div>
         `;
-    }
-
-
-    private handleAction(action: string): void {
-        if (action === 'refresh') {
-            // Request metrics update
-            if (this.sendCommandFn) {
-                // TODO: Implement metrics request command
-                console.log('Metrics refresh requested');
-            }
-        }
     }
 
     destroy(): void {

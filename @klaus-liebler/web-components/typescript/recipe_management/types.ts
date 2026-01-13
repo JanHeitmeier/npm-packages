@@ -1,18 +1,9 @@
-/**
- * TypeScript DTOs derived from C++ structs
- * Source: labathome_firmware/main/recipemanagement/application/dtos/
- */
-
-// ========== CommandDto (Frontend → Backend) ==========
-
 export interface CommandDto {
     command: string;
     recipeId?: string;
     payload?: any;  // Can be object or string
     requestId?: string;
 }
-
-// ========== LiveViewDto (Backend → Frontend) ==========
 
 export interface LiveViewDto {
     recipeId: string;
@@ -30,8 +21,6 @@ export interface LiveViewDto {
     sensorValues: Record<string, number>;
 }
 
-// ========== AvailableRecipesDto (Backend → Frontend) ==========
-
 export interface RecipeInfoDto {
     id: string;
     name: string;
@@ -45,8 +34,6 @@ export interface AvailableRecipesDto {
 }
 
 export type RecipeListDto = AvailableRecipesDto;
-
-// ========== AvailableStepsDto (Backend → Frontend) ==========
 
 export interface ParameterMetadataDto {
     name: string;
@@ -80,8 +67,6 @@ export interface AvailableStepsDto {
     steps: StepMetadataDto[];
 }
 
-// ========== RecipeDto (Bidirectional) ==========
-
 export interface StepConfigDto {
     stepTypeId: string;
     parameters: Record<string, string>;
@@ -98,8 +83,6 @@ export interface RecipeDto {
     version: string;
 }
 
-// ========== MetricsDto (Backend → Frontend) ==========
-
 export interface MetricDataPointDto {
     timestamp: number;
     value: number;
@@ -115,8 +98,6 @@ export interface MetricsDto {
     recipeId: string;
     series: MetricSeriesDto[];
 }
-
-// ========== Message Envelope ==========
 
 export interface RecipeMessage {
     type: 'LiveViewDto' | 'AvailableRecipesDto' | 'AvailableStepsDto' | 'RecipeDto' | 'MetricsDto';

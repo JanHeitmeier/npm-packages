@@ -1,39 +1,9 @@
-/**
- * Recipe Management - Main API
- * 
- * Standalone library for Recipe Management UI
- * 100% framework-independent (Vanilla TypeScript)
- * 
- * Usage:
- * ```typescript
- * import { setupRecipeManagement, renderLiveView, renderDashboard } from './recipe_management';
- * 
- * // 1. Setup communication
- * setupRecipeManagement({
- *     sendMessage: (cmd) => {
- *         websocket.send(JSON.stringify(cmd));
- *     }
- * });
- * 
- * // 2. Render views
- * const liveView = renderLiveView(document.getElementById('live-container'));
- * const dashboard = renderDashboard(document.getElementById('dashboard-container'));
- * 
- * // 3. Receive messages from backend
- * websocket.onmessage = (event) => {
- *     receiveMessage(event.data);
- * };
- * ```
- */
-
 import { recipeState } from './state';
 import { LiveViewRenderer } from './renderers/LiveViewRenderer';
 import { DashboardRenderer } from './renderers/DashboardRenderer';
 import { EditorRenderer } from './renderers/EditorRenderer';
 import { AnalyticsRenderer } from './renderers/AnalyticsRenderer';
 import type { CommandDto } from './types';
-
-// ========== Configuration ==========
 
 export interface RecipeManagementConfig {
     /**
@@ -50,6 +20,12 @@ export interface RecipeManagementConfig {
     registerWebSocket: (namespace: number, handler: (data: any) => void) => void;
 
     /**
+     * Optional callback for navigation events
+     * @param view Target view ('live' | 'dashboard' | 'editor' | 'analytics')
+     */
+    onNavigate?: (view: 'live' | 'dashboard' | 'editor' | 'analytics') => void;
+
+    /**
      * Optional CSS overrides for custom styling
      */
     cssOverrides?: {
@@ -60,46 +36,38 @@ export interface RecipeManagementConfig {
 }
 
 let globalSendFunction: ((command: CommandDto) => void) | null = null;
-
-// ========== Persistent Renderer Instances (Singletons) ==========
+let globalNavigateFunction: ((view: 'live' | 'dashboard' | 'editor' | 'analytics') => void) | null = null;
 
 let liveViewRenderer: LiveViewRenderer | null = null;
 let dashboardRenderer: DashboardRenderer | null = null;
 let editorRenderer: EditorRenderer | null = null;
 let analyticsRenderer: AnalyticsRenderer | null = null;
 
-// ========== Setup ==========
 
-/**
- * Initialize the Recipe Management system
- * Must be called ONCE during app startup
- * - Registers WebSocket handler for Namespace 11
- * - Creates persistent renderer instances
- */
 export function setupRecipeManagement(config: RecipeManagementConfig): void {
     globalSendFunction = config.sendMessage;
+    globalNavigateFunction = config.onNavigate || null;
 
-    // Register WebSocket handler for Namespace 11 ONCE
     config.registerWebSocket(11, receiveMessage);
 
-    // Create persistent renderer instances (Singletons)
-    liveViewRenderer = new LiveViewRenderer(document.createElement('div')); // Dummy container, will be replaced on first render
+    liveViewRenderer = new LiveViewRenderer(document.createElement('div'));
     dashboardRenderer = new DashboardRenderer(document.createElement('div'));
     editorRenderer = new EditorRenderer(document.createElement('div'));
     analyticsRenderer = new AnalyticsRenderer(document.createElement('div'));
 
-    // Set send functions
-    liveViewRenderer.setSendFunction(sendCommand);
-    dashboardRenderer.setSendFunction(sendCommand);
-    editorRenderer.setSendFunction(sendCommand);
-    analyticsRenderer.setSendFunction(sendCommand);
+    [liveViewRenderer, dashboardRenderer, editorRenderer, analyticsRenderer].forEach(renderer => {
+        renderer.setSendFunction(sendCommand);
+    });
+    
+    // Set navigation callback for Dashboard (switches to Live View after recipe start)
+    if (dashboardRenderer && globalNavigateFunction) {
+        dashboardRenderer.setNavigateFunction(globalNavigateFunction);
+    }
 
-    // Apply CSS overrides if provided
     if (config.cssOverrides) {
         applyCssOverrides(config.cssOverrides);
     }
 
-    // Import CSS automatically
     importRecipeManagementStyles();
 
     console.log('Recipe Management initialized with Namespace 11');
@@ -131,18 +99,11 @@ function importRecipeManagementStyles(): void {
     document.head.appendChild(link);
 }
 
-// ========== Message Reception (Engine → Browser) ==========
 
-/**
- * Process incoming messages from the backend
- * Automatically routes messages to the appropriate state
- * 
- * @param jsonMessage JSON string or parsed object containing the message
- */
 export function receiveMessage(jsonMessage: string | any): void {
     console.log('%c[RecipeManagement] ⬇️ EMPFANGEN:', 'color: #4CAF50; font-weight: bold', jsonMessage);
+    
     let message: any;
-
     if (typeof jsonMessage === 'string') {
         try {
             message = JSON.parse(jsonMessage);
@@ -157,44 +118,40 @@ export function receiveMessage(jsonMessage: string | any): void {
 
     console.log('[RecipeManagement] Processing message:', message);
 
-    // Auto-detect message type and route to state
     if (message.type) {
         console.log('[RecipeManagement] Message has type:', message.type);
         routeTypedMessage(message);
     } else {
         console.log('[RecipeManagement] Message has no type, inferring...');
-        // Try to infer type from structure
         routeUntypedMessage(message);
     }
 }
 
 function routeTypedMessage(message: any): void {
     console.log('[RecipeManagement] routeTypedMessage:', message.type);
+    
+    const data = message.data || message;
+    
     switch (message.type) {
-        case 'LiveViewDto':
         case 'liveview':
-            recipeState.setLiveView(message.data || message);
+            recipeState.setLiveView(data);
             break;
-        case 'AvailableRecipesDto':
-        case 'RecipeListDto':
         case 'available_recipes':
             console.log('[RecipeManagement] Setting available recipes with', message.recipes?.length || 0, 'recipes');
-            recipeState.setAvailableRecipes(message.data || message);
+            recipeState.setAvailableRecipes(data);
             break;
-        case 'AvailableStepsDto':
         case 'available_steps':
             console.log('[RecipeManagement] Setting available steps with', message.steps?.length || 0, 'steps');
-            recipeState.setAvailableSteps(message);
+            recipeState.setAvailableSteps(data);
             break;
-        case 'RecipeDto':
         case 'recipe':
             console.log('[RecipeManagement] Setting current recipe:', message.name || 'Unknown');
-            recipeState.setCurrentRecipe(message.data || message);
+            recipeState.setCurrentRecipe(data);
             break;
-        case 'MetricsDto':
         case 'metrics':
-            recipeState.setMetrics(message.data || message);
+            recipeState.setMetrics(data);
             break;
+            
         default:
             console.warn('Unknown message type:', message.type);
     }
@@ -202,7 +159,7 @@ function routeTypedMessage(message: any): void {
 
 function routeUntypedMessage(message: any): void {
     console.log('[RecipeManagement] routeUntypedMessage, analyzing structure:', Object.keys(message));
-    // Infer type from structure
+    
     if (message.recipeStatus && message.currentStepIndex !== undefined) {
         console.log('[RecipeManagement] Detected as LiveViewDto');
         recipeState.setLiveView(message);
@@ -212,7 +169,7 @@ function routeUntypedMessage(message: any): void {
     } else if (message.steps && Array.isArray(message.steps) && message.steps[0]?.typeId) {
         console.log('[RecipeManagement] Detected as AvailableStepsDto with', message.steps.length, 'steps');
         recipeState.setAvailableSteps(message);
-    } else if (message.id && message.name && message.steps) {
+    } else if (message.id && message.name && message.steps && Array.isArray(message.steps)) {
         console.log('[RecipeManagement] Detected as RecipeDto');
         recipeState.setCurrentRecipe(message);
     } else if (message.series && Array.isArray(message.series)) {
@@ -223,66 +180,36 @@ function routeUntypedMessage(message: any): void {
     }
 }
 
-// ========== Render Functions (use persistent renderers) ==========
+function ensureRenderer(renderer: any, name: string): void {
+    if (!renderer) {
+        throw new Error(`Recipe Management not initialized. Call setupRecipeManagement() first.`);
+    }
+}
 
-/**
- * Render the Live View (real-time recipe execution monitoring)
- * Uses persistent renderer - safe to call multiple times (e.g., OnRestart)
- * @param container HTML element to render into
- */
 export function renderLiveView(container: HTMLElement): void {
-    if (!liveViewRenderer) {
-        throw new Error('Recipe Management not initialized. Call setupRecipeManagement() first.');
-    }
-    liveViewRenderer.setContainer(container);
-    liveViewRenderer.render();
+    ensureRenderer(liveViewRenderer, 'LiveViewRenderer');
+    liveViewRenderer!.setContainer(container);
+    liveViewRenderer!.render();
 }
 
-/**
- * Render the Dashboard (available recipes overview)
- * Uses persistent renderer - safe to call multiple times (e.g., OnRestart)
- * @param container HTML element to render into
- */
 export function renderDashboard(container: HTMLElement): void {
-    if (!dashboardRenderer) {
-        throw new Error('Recipe Management not initialized. Call setupRecipeManagement() first.');
-    }
-    dashboardRenderer.setContainer(container);
-    dashboardRenderer.render();
+    ensureRenderer(dashboardRenderer, 'DashboardRenderer');
+    dashboardRenderer!.setContainer(container);
+    dashboardRenderer!.render();
 }
 
-/**
- * Render the Recipe Editor (create/edit recipes)
- * Uses persistent renderer - safe to call multiple times (e.g., OnRestart)
- * @param container HTML element to render into
- */
 export function renderEditor(container: HTMLElement): void {
-    if (!editorRenderer) {
-        throw new Error('Recipe Management not initialized. Call setupRecipeManagement() first.');
-    }
-    editorRenderer.setContainer(container);
-    editorRenderer.render();
+    ensureRenderer(editorRenderer, 'EditorRenderer');
+    editorRenderer!.setContainer(container);
+    editorRenderer!.render();
 }
 
-/**
- * Render the Analytics View (metrics and charts - dummy implementation)
- * Uses persistent renderer - safe to call multiple times (e.g., OnRestart)
- * @param container HTML element to render into
- */
 export function renderAnalytics(container: HTMLElement): void {
-    if (!analyticsRenderer) {
-        throw new Error('Recipe Management not initialized. Call setupRecipeManagement() first.');
-    }
-    analyticsRenderer.setContainer(container);
-    analyticsRenderer.render();
+    ensureRenderer(analyticsRenderer, 'AnalyticsRenderer');
+    analyticsRenderer!.setContainer(container);
+    analyticsRenderer!.render();
 }
 
-// ========== Manual Command Sending ==========
-
-/**
- * Send a command manually (alternative to UI interactions)
- * @param command CommandDto to send
- */
 export function sendCommand(command: CommandDto): void {
     if (!globalSendFunction) {
         throw new Error('Recipe Management not initialized. Call setupRecipeManagement() first.');
@@ -291,18 +218,10 @@ export function sendCommand(command: CommandDto): void {
     globalSendFunction(command);
 }
 
-// ========== State Access (for advanced usage) ==========
-
-/**
- * Get direct access to the state (for debugging or custom integrations)
- */
 export function getState() {
     return recipeState;
 }
 
-/**
- * Reset all state (clears all data)
- */
 export function resetState(): void {
     recipeState.reset();
 }

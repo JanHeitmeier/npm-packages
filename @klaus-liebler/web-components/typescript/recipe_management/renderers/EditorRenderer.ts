@@ -1,10 +1,5 @@
-/**
- * Recipe Editor Renderer
- * Allows creating and editing recipes
- * Based on: recipe-editor.css
- */
-
 import { recipeState } from '../state';
+import * as Templates from './EditorTemplates';
 import type { RecipeDto, StepConfigDto } from '../types';
 import type { ViewHandle } from './LiveViewRenderer';
 
@@ -135,7 +130,6 @@ export class EditorRenderer implements ViewHandle {
         }
         
         // Request from backend again
-        
         // No cached recipes - request from backend
         console.log('[EditorRenderer] Requesting recipes from backend');
         this.requestRecipeList();
@@ -152,137 +146,20 @@ export class EditorRenderer implements ViewHandle {
 
     render(): void {
         const availableSteps = recipeState.getAvailableSteps();
-        
-        this.container.innerHTML = `
-            <div class="editor-grid-container">
-                <!-- Header: Title -->
-                <div class="editor-title">
-                    <h1>Recipe Editor</h1>
-                </div>
-
-                <!-- Header: Action Buttons -->
-                <div class="editor-actions">
-                    <button class="btn-secondary" data-action="open-recipe-loader">📂 Load</button>
-                    <button class="btn-secondary" data-action="new">📄 New</button>
-                    <button class="btn-primary" data-action="save">💾 Save</button>
-                </div>
-
-                <!-- Left: Recipe Details (Fixed, Non-Scrollable) -->
-                <div class="editor-details">
-                    <h2>Details</h2>
-                    <div class="details-form">
-                        <div class="form-group">
-                            <label for="recipe-name">Name:</label>
-                            <input type="text" id="recipe-name" value="${this.escapeHtml(this.currentRecipe.name)}" placeholder="Recipe name" required />
-                        </div>
-                        <div class="form-group">
-                            <label for="recipe-description">Description:</label>
-                            <textarea id="recipe-description" placeholder="Description" rows="3">${this.escapeHtml(this.currentRecipe.description)}</textarea>
-                        </div>
-                        <div class="form-group">
-                            <label for="recipe-author">Author:</label>
-                            <input type="text" id="recipe-author" value="${this.escapeHtml(this.currentRecipe.author)}" placeholder="Author" />
-                        </div>
-                        <div class="form-group">
-                            <label for="recipe-version">Version:</label>
-                            <input type="text" id="recipe-version" value="${this.escapeHtml(this.currentRecipe.version)}" placeholder="1.0" />
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Center: Steps List (Scrollable) -->
-                <div class="editor-steps-list">
-                    <div class="steps-list-header">
-                        <h2>Steps (${this.currentRecipe.steps.length})</h2>
-                        <button class="btn-success" data-action="open-step-selector">+ Add</button>
-                    </div>
-                    <div class="steps-list-content">
-                        ${this.renderStepsList()}
-                    </div>
-                </div>
-
-                <!-- Right: Step Parameters (Scrollable if needed) -->
-                <div class="editor-step-parameters">
-                    <div class="parameters-header">
-                        <h2>Parameter</h2>
-                    </div>
-                    <div class="parameters-content">
-                        ${this.renderStepParameters()}
-                    </div>
-                </div>
-            </div>
-
-            <!-- Step Selector Modal -->
-            <div class="step-selector-modal ${this.isStepSelectorOpen ? 'active' : ''}" data-modal="step-selector">
-                <div class="step-selector-content">
-                    <div class="step-selector-header">
-                        <h2>Schritt-Typ auswählen</h2>
-                        <button class="btn-secondary" data-action="close-step-selector">✕ Schließen</button>
-                    </div>
-                    <div class="step-selector-body">
-                        ${availableSteps ? this.renderStepSelector(availableSteps) : '<p class="loading">Lade verfügbare Schritt-Typen...</p>'}
-                    </div>
-                </div>
-            </div>
-
-            <!-- Recipe Loader Modal -->
-            <div class="step-selector-modal ${this.isRecipeLoaderOpen ? 'active' : ''}" data-modal="recipe-loader">
-                <div class="step-selector-content">
-                    <div class="step-selector-header">
-                        <h2>Rezept zum Bearbeiten auswählen</h2>
-                        <button class="btn-secondary" data-action="close-recipe-loader">✕ Schließen</button>
-                    </div>
-                    <div class="step-selector-body">
-                        ${this.renderRecipeLoader()}
-                    </div>
-                </div>
-            </div>
-        `;
-
-        this.attachEventListeners();
-    }
-
-    private renderRecipeLoader(): string {
         const availableRecipes = recipeState.getAvailableRecipes();
         
-        if (!availableRecipes || !availableRecipes.recipes || availableRecipes.recipes.length === 0) {
-            return '<p class="loading">Keine Rezepte verfügbar. Erstelle zuerst ein Rezept und speichere es.</p>';
-        }
+        this.container.innerHTML = Templates.renderMainEditor(
+            this.currentRecipe,
+            this.selectedStepIndex,
+            this.isStepSelectorOpen,
+            this.isRecipeLoaderOpen,
+            availableSteps,
+            availableRecipes,
+            this.renderStepParameters(),
+            (typeId) => this.getStepDisplayName(typeId)
+        );
 
-        return `
-            <div class="step-type-list">
-                ${availableRecipes.recipes.map((recipe: any) => `
-                    <div class="step-type-item" data-action="load-recipe" data-recipe-id="${this.escapeHtml(recipe.id)}">
-                        <h4>${this.escapeHtml(recipe.name)}</h4>
-                        <p>${this.escapeHtml(recipe.description || 'Keine Beschreibung')}</p>
-                        <span class="step-type-category">ID: ${this.escapeHtml(recipe.id)}</span>
-                    </div>
-                `).join('')}
-            </div>
-        `;
-    }
-
-    private renderStepsList(): string {
-        if (this.currentRecipe.steps.length === 0) {
-            return '<div class="empty-steps">No steps defined yet. Click "+ Add" to add a step.</div>';
-        }
-
-        return this.currentRecipe.steps
-            .sort((a, b) => a.order - b.order)
-            .map((step, index) => `
-                <div class="step-item ${this.selectedStepIndex === index ? 'selected' : ''}" data-action="select-step-item" data-step-index="${index}">
-                    <div class="step-item-header">
-                        <span class="step-number">${step.order + 1}</span>
-                        <span class="step-type-name">${this.escapeHtml(this.getStepDisplayName(step.stepTypeId))}</span>
-                        <div class="step-actions">
-                            <button class="btn-icon" data-action="move-up" data-step-index="${index}" ${index === 0 ? 'disabled' : ''}>↑</button>
-                            <button class="btn-icon" data-action="move-down" data-step-index="${index}" ${index === this.currentRecipe.steps.length - 1 ? 'disabled' : ''}>↓</button>
-                            <button class="btn-icon btn-danger" data-action="delete-step" data-step-index="${index}">🗑</button>
-                        </div>
-                    </div>
-                    <div class="step-category">${this.escapeHtml(step.stepTypeId)}</div>
-                </div>
-            `).join('');
+        this.attachEventListeners();
     }
 
     private renderStepParameters(): string {
@@ -294,97 +171,13 @@ export class EditorRenderer implements ViewHandle {
         const availableSteps = recipeState.getAvailableSteps();
         const stepMeta = availableSteps?.steps?.find((s: any) => s.typeId === step.stepTypeId);
 
-        if (!stepMeta || !stepMeta.parameters || stepMeta.parameters.length === 0) {
-            return '<div class="no-step-selected">This step has no configurable parameters</div>';
-        }
-
-        return stepMeta.parameters.map((paramMeta: any) => {
-            const currentValue = step.parameters[paramMeta.name] || paramMeta.defaultValue || '';
-            
-            // Determine input type and attributes based on parameter type
-            let inputType = 'text';
-            let minAttr = '';
-            let maxAttr = '';
-            let stepAttr = '';
-            
-            if (paramMeta.type === 'int' || paramMeta.type === 'float') {
-                inputType = 'number';
-                if (paramMeta.minValue !== undefined && paramMeta.minValue !== '' && paramMeta.minValue !== '0') {
-                    minAttr = `min="${this.escapeHtml(paramMeta.minValue)}"`;
-                }
-                if (paramMeta.maxValue !== undefined && paramMeta.maxValue !== '' && paramMeta.maxValue !== '0') {
-                    maxAttr = `max="${this.escapeHtml(paramMeta.maxValue)}"`;
-                }
-                if (paramMeta.type === 'float') {
-                    stepAttr = 'step="any"';
-                } else {
-                    stepAttr = 'step="1"';
-                }
-            } else if (paramMeta.type === 'bool') {
-                inputType = 'checkbox';
-            }
-            
-            // Format range display
-            let rangeText = '';
-            if (paramMeta.minValue && paramMeta.maxValue) {
-                rangeText = `Range: ${paramMeta.minValue} - ${paramMeta.maxValue}`;
-            } else if (paramMeta.minValue) {
-                rangeText = `Min: ${paramMeta.minValue}`;
-            } else if (paramMeta.maxValue) {
-                rangeText = `Max: ${paramMeta.maxValue}`;
-            }
-            
-            return `
-                <div class="parameter-item-wide">
-                    <div class="parameter-label-section">
-                        <label>${this.escapeHtml(paramMeta.name)}${paramMeta.required ? ' *' : ''}</label>
-                    </div>
-                    <div class="parameter-input-section">
-                        <div class="parameter-input-group">
-                            <input 
-                                type="${inputType}" 
-                                value="${this.escapeHtml(currentValue)}" 
-                                data-param-key="${this.escapeHtml(paramMeta.name)}"
-                                placeholder="${this.escapeHtml(paramMeta.defaultValue || '')}"
-                                ${paramMeta.required ? 'required' : ''}
-                                ${minAttr}
-                                ${maxAttr}
-                                ${stepAttr}
-                            />
-                            ${paramMeta.unit ? `<span class="parameter-unit">${this.escapeHtml(paramMeta.unit)}</span>` : ''}
-                        </div>
-                        ${paramMeta.description ? `<div class="parameter-description">${this.escapeHtml(paramMeta.description)}</div>` : ''}
-                        ${rangeText ? `<div class="parameter-limits">${rangeText}</div>` : ''}
-                    </div>
-                </div>
-            `;
-        }).join('');
+        return Templates.renderStepParameters(step, stepMeta);
     }
 
     private getStepDisplayName(typeId: string): string {
         const availableSteps = recipeState.getAvailableSteps();
         const stepMeta = availableSteps?.steps?.find((s: any) => s.typeId === typeId);
         return stepMeta?.displayName || typeId;
-    }
-
-    private renderStepSelector(availableSteps: any): string {
-        console.log('[EditorRenderer] Rendering step selector with steps:', availableSteps);
-        
-        if (!availableSteps.steps || availableSteps.steps.length === 0) {
-            return '<p>No step types available</p>';
-        }
-
-        return `
-            <div class="step-type-list">
-                ${availableSteps.steps.map((stepMeta: any) => `
-                    <div class="step-type-item" data-action="select-step" data-step-type="${this.escapeHtml(stepMeta.typeId)}">
-                        <h3>${this.escapeHtml(stepMeta.displayName)}</h3>
-                        <p>${this.escapeHtml(stepMeta.description)}</p>
-                        <span class="category">${this.escapeHtml(stepMeta.category)}</span>
-                    </div>
-                `).join('')}
-            </div>
-        `;
     }
 
     private attachEventListeners(): void {
@@ -619,14 +412,80 @@ export class EditorRenderer implements ViewHandle {
             return;
         }
 
+        // Validate name (required)
         if (!this.currentRecipe.name.trim()) {
             alert('Bitte gib einen Rezeptnamen ein');
             return;
         }
+        if (this.currentRecipe.name.length > 50) {
+            alert('Rezeptname ist zu lang (max. 50 Zeichen)');
+            return;
+        }
+        
+        // Validate description (required)
+        if (!this.currentRecipe.description.trim()) {
+            alert('Bitte gib eine Beschreibung ein');
+            return;
+        }
+        if (this.currentRecipe.description.length > 500) {
+            alert('Beschreibung ist zu lang (max. 500 Zeichen)');
+            return;
+        }
+        
+        // Validate author (required)
+        if (!this.currentRecipe.author.trim()) {
+            alert('Bitte gib einen Autor ein');
+            return;
+        }
+        if (this.currentRecipe.author.length > 50) {
+            alert('Autorenname ist zu lang (max. 50 Zeichen)');
+            return;
+        }
+        
+        // Validate version (required)
+        if (!this.currentRecipe.version.trim()) {
+            alert('Bitte gib eine Version ein');
+            return;
+        }
+        const versionPattern = /^\d+(\.\d+){0,2}$/;
+        if (!versionPattern.test(this.currentRecipe.version.trim())) {
+            alert('Version muss im Format X.Y oder X.Y.Z sein (z.B. 1.0 oder 1.2.3)');
+            return;
+        }
+        
+        // Check if recipe already exists with same version
+        if (this.currentRecipe.id && this.currentRecipe.id !== '') {
+            const availableRecipes = recipeState.getAvailableRecipes();
+            if (availableRecipes && availableRecipes.recipes) {
+                const existingRecipe = availableRecipes.recipes.find(r => r.id === this.currentRecipe.id);
+                if (existingRecipe) {
+                    // Recipe exists - check if we're loading an existing recipe
+                    const originalRecipe = recipeState.getCurrentRecipe();
+                    if (originalRecipe && originalRecipe.id === this.currentRecipe.id && 
+                        originalRecipe.version === this.currentRecipe.version) {
+                        // Same version - warn user
+                        if (!confirm(`Du speicherst Änderungen mit derselben Versionsnummer (${this.currentRecipe.version}).\n\nMöchtest du die Version erhöhen oder trotzdem mit derselben Version speichern?\n\nOK = Mit gleicher Version speichern\nAbbrechen = Versionsnummer anpassen`)) {
+                            return;
+                        }
+                    }
+                }
+            }
+        }
 
-        // Generate ID with timestamp if new recipe (ID will be used as creation timestamp)
+        // Generate ID with name, version and timestamp if new recipe
+        // Format: NAME_v1_0_recipe_1234567890
         if (!this.currentRecipe.id || this.currentRecipe.id === '') {
-            this.currentRecipe.id = `recipe_${Date.now()}`;
+            const sanitizedName = this.currentRecipe.name.trim()
+                .replace(/[^a-zA-Z0-9_-]/g, '_')  // Replace special chars with underscore
+                .replace(/_{2,}/g, '_')            // Replace multiple underscores with single
+                .substring(0, 30);                  // Limit length
+            
+            const sanitizedVersion = this.currentRecipe.version.trim()
+                .replace(/\./g, '_')                // Replace dots with underscores (v1.0 -> v1_0)
+                .replace(/[^a-zA-Z0-9_]/g, '');    // Remove other special chars
+            
+            const timestamp = Date.now();
+            this.currentRecipe.id = `${sanitizedName}_v${sanitizedVersion}_recipe_${timestamp}`;
         }
 
         console.log('[EditorRenderer] Saving recipe:', this.currentRecipe);
@@ -691,12 +550,6 @@ export class EditorRenderer implements ViewHandle {
             this.selectedStepIndex = toIndex;
         }
         this.render();
-    }
-
-    private escapeHtml(text: string): string {
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
     }
 
     destroy(): void {

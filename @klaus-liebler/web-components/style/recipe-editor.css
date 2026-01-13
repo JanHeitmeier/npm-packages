@@ -74,6 +74,23 @@
 .form-group label {
     font-weight: 600;
     color: #333;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.form-group .info-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+    cursor: help;
+    opacity: 0.6;
+    transition: opacity 0.2s ease;
+}
+
+.form-group .info-icon:hover {
+    opacity: 1;
 }
 
 .form-group input,
