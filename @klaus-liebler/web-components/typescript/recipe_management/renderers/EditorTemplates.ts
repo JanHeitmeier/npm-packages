@@ -7,13 +7,34 @@ export function renderRecipeLoader(availableRecipes: any): string {
 
     return `
         <div class="step-type-list">
-            ${availableRecipes.recipes.map((recipe: any) => `
+            ${availableRecipes.recipes.map((recipe: any) => {
+                const createdDate = recipe.createdAt ? new Date(recipe.createdAt).toLocaleString('de-DE', {
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                }) : 'N/A';
+                const modifiedDate = recipe.lastModified ? new Date(recipe.lastModified).toLocaleString('de-DE', {
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                }) : 'N/A';
+                
+                return `
                 <div class="step-type-item" data-action="load-recipe" data-recipe-id="${escapeHtml(recipe.id)}">
-                    <h4>${escapeHtml(recipe.name)}</h4>
+                    <h4>${escapeHtml(recipe.name)} <span style="font-size: 0.8em; color: #999;">v${escapeHtml(recipe.version || '1.0')}</span></h4>
                     <p>${escapeHtml(recipe.description || 'Keine Beschreibung')}</p>
+                    <div style="font-size: 0.75em; color: #666; margin-top: 8px;">
+                        <div>Erstellt: ${createdDate}</div>
+                        <div>Geändert: ${modifiedDate}</div>
+                    </div>
                     <span class="step-type-category">ID: ${escapeHtml(recipe.id)}</span>
                 </div>
-            `).join('')}
+                `;
+            }).join('')}
         </div>
     `;
 }
@@ -171,6 +192,9 @@ export function renderMainEditor(
                 <button class="btn-secondary" data-action="open-recipe-loader">📂 Load</button>
                 <button class="btn-secondary" data-action="new">📄 New</button>
                 <button class="btn-primary" data-action="save">💾 Save</button>
+                <button class="btn-danger" data-action="delete">🗑 Delete</button>
+                <button class="btn-secondary" data-action="import">📥 Import</button>
+                <button class="btn-secondary" data-action="export">📤 Export</button>
             </div>
 
             <!-- Left: Recipe Details (Fixed, Non-Scrollable) -->
@@ -205,6 +229,32 @@ export function renderMainEditor(
                         </label>
                         <input type="text" id="recipe-version" value="${escapeHtml(currentRecipe.version)}" placeholder="1.0" pattern="^\\d+(\\.\\d+){0,2}$" title="Version format: X.Y or X.Y.Z" required />
                     </div>
+                    ${currentRecipe.createdAt ? `
+                    <div class="form-group">
+                        <label>Created:</label>
+                        <div class="timestamp-display">${new Date(currentRecipe.createdAt).toLocaleString('de-DE', {
+                            year: 'numeric', 
+                            month: '2-digit', 
+                            day: '2-digit', 
+                            hour: '2-digit', 
+                            minute: '2-digit',
+                            second: '2-digit'
+                        })}</div>
+                    </div>
+                    ` : ''}
+                    ${currentRecipe.lastModified ? `
+                    <div class="form-group">
+                        <label>Last Modified:</label>
+                        <div class="timestamp-display">${new Date(currentRecipe.lastModified).toLocaleString('de-DE', {
+                            year: 'numeric', 
+                            month: '2-digit', 
+                            day: '2-digit', 
+                            hour: '2-digit', 
+                            minute: '2-digit',
+                            second: '2-digit'
+                        })}</div>
+                    </div>
+                    ` : ''}
                 </div>
             </div>
 

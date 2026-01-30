@@ -1,36 +1,28 @@
 /**
- * Recipe Management Styles
- * Combines existing CSS files and adds Recipe Management specific styles
- * 
- * Base styles imported from:
- * - liveview.css
- * - recipe-editor.css
- * - analytics.css
- * - dashboard.css (implied)
+ * Recipe Management Shared Styles mit neuem Farbschema
  */
 
-/* ========== CSS Variables (overridable) ========== */
-
+/* Variablen aus variables.css importieren */
 :root {
-    --recipe-mgmt-primary-color: #007bff;
-    --recipe-mgmt-secondary-color: #6c757d;
-    --recipe-mgmt-success-color: #28a745;
-    --recipe-mgmt-danger-color: #dc3545;
-    --recipe-mgmt-warning-color: #ffc107;
-    --recipe-mgmt-info-color: #17a2b8;
+    --recipe-mgmt-primary-color: var(--blue-base);
+    --recipe-mgmt-secondary-color: var(--blue-light);
+    --recipe-mgmt-success-color: var(--success-green);
+    --recipe-mgmt-danger-color: var(--error-red);
+    --recipe-mgmt-warning-color: var(--warning-yellow);
+    --recipe-mgmt-info-color: var(--blue-base);
     
-    --recipe-mgmt-bg-primary: #ffffff;
-    --recipe-mgmt-bg-secondary: #f8f9fa;
-    --recipe-mgmt-bg-dark: #343a40;
+    --recipe-mgmt-bg-primary: var(--white);
+    --recipe-mgmt-bg-secondary: var(--blue-bg);
+    --recipe-mgmt-bg-dark: var(--blue-deep);
     
-    --recipe-mgmt-text-primary: #212529;
-    --recipe-mgmt-text-secondary: #6c757d;
-    --recipe-mgmt-text-light: #ffffff;
+    --recipe-mgmt-text-primary: var(--text-dark);
+    --recipe-mgmt-text-secondary: var(--text-light);
+    --recipe-mgmt-text-light: var(--white);
     
-    --recipe-mgmt-border-color: #dee2e6;
-    --recipe-mgmt-border-radius: 4px;
+    --recipe-mgmt-border-color: var(--blue-light);
+    --recipe-mgmt-border-radius: var(--radius);
     
-    --recipe-mgmt-font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --recipe-mgmt-font-family: var(--font-main);
     --recipe-mgmt-font-size: 14px;
     
     --recipe-mgmt-spacing-xs: 4px;
@@ -40,8 +32,7 @@
     --recipe-mgmt-spacing-xl: 32px;
 }
 
-/* ========== Common Base Styles ========== */
-
+/* Gemeinsame Basis-Styles */
 .recipe-mgmt-live-view,
 .recipe-mgmt-dashboard,
 .recipe-mgmt-editor,
@@ -66,8 +57,7 @@
     box-sizing: inherit;
 }
 
-/* ========== Buttons ========== */
-
+/* Button Styles */
 .recipe-mgmt-live-view button,
 .recipe-mgmt-dashboard button,
 .recipe-mgmt-editor button,
@@ -78,7 +68,7 @@
     border: none;
     border-radius: var(--recipe-mgmt-border-radius);
     cursor: pointer;
-    transition: background-color 0.2s, transform 0.1s;
+    transition: all 0.2s;
 }
 
 .recipe-mgmt-live-view button:hover,
@@ -96,48 +86,52 @@
 }
 
 .btn-primary {
-    background-color: var(--recipe-mgmt-primary-color);
-    color: var(--recipe-mgmt-text-light);
+    background-color: var(--color-button);
+    color: var(--white);
 }
 
 .btn-primary:hover {
-    background-color: #0056b3;
+    background-color: var(--color-button-hover);
 }
 
 .btn-secondary {
-    background-color: var(--recipe-mgmt-secondary-color);
-    color: var(--recipe-mgmt-text-light);
+    background-color: var(--blue-light);
+    color: var(--white);
 }
 
 .btn-secondary:hover {
-    background-color: #545b62;
+    background-color: var(--blue-base);
 }
 
 .btn-danger {
-    background-color: var(--recipe-mgmt-danger-color);
-    color: var(--recipe-mgmt-text-light);
+    background-color: var(--error-red);
+    color: var(--white);
 }
 
 .btn-danger:hover {
-    background-color: #c82333;
+    background-color: #B71C1C;
+}
+
+.btn-success {
+    background-color: var(--success-green);
+    color: var(--white);
+}
+
+.btn-success:hover {
+    background-color: #388E3C;
 }
 
 .btn-icon {
     padding: var(--recipe-mgmt-spacing-xs) var(--recipe-mgmt-spacing-sm);
     background-color: transparent;
-    border: 1px solid var(--recipe-mgmt-border-color);
-    color: var(--recipe-mgmt-text-primary);
+    border: 1px solid var(--blue-light);
+    color: var(--text-dark);
 }
 
 .btn-icon:hover {
-    background-color: var(--recipe-mgmt-bg-secondary);
+    background-color: var(--blue-bg);
 }
 
-/* ========== Live View Styles ========== */
-
-.live-view-container {
-    padding: var(--recipe-mgmt-spacing-lg);
-    max-width: 1200px;
     margin: 0 auto;
 }
 
@@ -153,7 +147,6 @@
 .status-badge {
     display: inline-block;
     padding: var(--recipe-mgmt-spacing-xs) var(--recipe-mgmt-spacing-sm);
-    border-radius: 12px;
     font-size: 12px;
     font-weight: normal;
     text-transform: uppercase;
@@ -173,7 +166,6 @@
     margin-bottom: var(--recipe-mgmt-spacing-lg);
     padding: var(--recipe-mgmt-spacing-md);
     background: var(--recipe-mgmt-bg-secondary);
-    border-radius: var(--recipe-mgmt-border-radius);
 }
 
 .live-details h2,
@@ -199,7 +191,6 @@
     width: 100%;
     height: 20px;
     background-color: #e9ecef;
-    border-radius: var(--recipe-mgmt-border-radius);
     overflow: hidden;
     margin-top: var(--recipe-mgmt-spacing-sm);
 }
@@ -224,7 +215,6 @@
     padding: var(--recipe-mgmt-spacing-md);
     background: var(--recipe-mgmt-bg-secondary);
     border: 2px solid var(--recipe-mgmt-border-color);
-    border-radius: var(--recipe-mgmt-border-radius);
     min-width: 100px;
     text-align: center;
 }
@@ -250,7 +240,6 @@
 .sensor-item {
     padding: var(--recipe-mgmt-spacing-sm);
     background: white;
-    border-radius: var(--recipe-mgmt-border-radius);
     display: flex;
     justify-content: space-between;
 }

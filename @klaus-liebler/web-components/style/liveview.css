@@ -1,13 +1,13 @@
-/* Ensure body and live-view page are not scrollable */
+/* LiveView mit neuem Farbschema und Grid-Anpassungen */
 body {
-    overflow: hidden; /* Prevent scrolling on the entire page */
+    overflow: hidden;
     margin: 0;
     padding: 0;
     width: 100vw;
     height: 100vh;
 }
 
-/* Ensure live-view starts at the top of the viewport */
+/* Grid mit 20 Spalten statt 10 */
 .live-view-container {
     position: absolute;
     top: 0;
@@ -15,58 +15,136 @@ body {
     width: 100vw;
     height: 100vh;
     display: grid;
-    grid-template-columns: repeat(10, 1fr);
+    grid-template-columns: repeat(20, 1fr);
     grid-template-rows: 80px 2fr 1fr auto;
-    overflow: hidden; /* Prevent scrolling within the live-view container */
+    overflow: hidden;
     padding: 0 !important;
     margin: 0 !important;
     box-sizing: border-box;
+    gap: 0;
 }
+
 .main{
- overflow: hidden; /* Prevent scrolling */
+    overflow: hidden;
 }
+
+/* Titel oben links mit dunkelblauem Hintergrund */
 .live-title {
-    grid-column: 1 / 4;
+    grid-column: 1 / 6;
     grid-row: 1;
-    background: #667eea;
-    border: 1px solid #2c3e50;
+    background: var(--blue-dark);
+    border: 1px solid var(--blue-deep);
     padding: 0 !important;
     margin: 0 !important;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: white;
+    color: var(--white);
     font-size: 1.5rem;
     font-weight: bold;
 }
 
 .live-details {
-    grid-column: 4 / 11;
+    grid-column: 6 / 21;
     grid-row: 1;
-    background: #f0f0f0;
-    border: 1px solid #2c3e50;
+    background: var(--blue-bg);
+    border: 1px solid var(--blue-dark);
     border-left: none;
-    padding: 0 !important;
+    padding: 4px 10px !important;
     margin: 0 !important;
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
 }
 
 .live-details h2 {
     margin: 0;
-    font-size: 1.2rem;
-    color: #333;
+    font-size: 0.95rem;
+    color: var(--text-dark);
+    flex-shrink: 0;
 }
 
 .details-content {
+    display: flex;
+    flex-direction: row;
+    gap: 20px;
+    flex: 1;
+    align-items: center;
     overflow: hidden;
 }
 
+.detail-column {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+    flex: 1;
+}
+
+.detail-row {
+    display: flex;
+    flex-direction: row;
+    gap: 8px;
+    align-items: baseline;
+}
+
+.detail-label {
+    font-size: 0.75rem;
+    line-height: 1.2;
+    color: var(--text-dark);
+    font-weight: 600;
+    text-align: right;
+    min-width: 60px;
+    flex-shrink: 0;
+}
+
+.detail-value {
+    font-size: 0.75rem;
+    line-height: 1.2;
+    color: var(--text-dark);
+    text-align: left;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex: 1;
+}
+
+.detail-item {
+    font-size: 0.75rem;
+    line-height: 1.2;
+    color: var(--text-dark);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.detail-item strong {
+    font-weight: 600;
+}
+
+.detail-btn {
+    padding: 3px 10px;
+    background: var(--blue-dark);
+    color: var(--white);
+    border: none;
+    border-radius: 3px;
+    font-size: 0.7rem;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.2s;
+}
+
+.detail-btn:hover {
+    background: var(--blue-deep);
+}
+
+/* Progress Bar - jetzt nur 1 Spalte breit (halbe Breite im 20-Grid) */
 .live-progress-bar {
     grid-column: 1 / 2;
     grid-row: 2 / 4;
-    background: #e0e0e0;
-    border: 1px solid #2c3e50;
+    background: var(--blue-bg);
+    border: 1px solid var(--blue-dark);
     border-top: none;
     padding: 0;
     position: relative;
@@ -75,21 +153,24 @@ body {
     align-items: stretch;
 }
 
+/* Progress Fill mit abgerundeten Ecken */
 .progress-fill {
     width: 100%;
-    background: #4CAF50;
+    background: var(--success-green);
     position: relative;
     display: flex;
     align-items: center;
     justify-content: center;
     transition: height 0.3s ease;
+    border-radius: 30px;
 }
 
+/* Progress Text mit starkem Schatten für bessere Lesbarkeit */
 .progress-text {
-    color: white;
+    color: var(--white);
     font-weight: bold;
     font-size: 1.2rem;
-    text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+    text-shadow: 0px 0px 10px rgb(0, 0, 0);
     position: absolute;
     top: 50%;
     left: 50%;
@@ -97,7 +178,7 @@ body {
 }
 
 .live-recipe-row {
-    grid-column: 2 / 7;
+    grid-column: 2 / 13;
     grid-row: 2 / 4;
     display: flex;
     flex-direction: column;
@@ -105,16 +186,17 @@ body {
     margin: 0 !important;
 }
 
+/* Schritte Container mit Padding für Abstand zum Rand */
 .recipe-steps {
     flex: 1;
     display: flex;
     flex-direction: column;
     gap: 0;
-    background: #f0f0f0;
-    border: 1px solid #2c3e50;
+    background: var(--white);
+    border: 1px solid var(--blue-dark);
     border-top: none;
     border-left: none;
-    padding: 0;
+    padding: 5px;
     overflow-y: auto;
     overflow-x: hidden;
 }
@@ -122,24 +204,23 @@ body {
 .step-box {
     min-height: 60px;
     width: 100%;
-    background: white;
-    border: 1px solid #ccc;
+    background: var(--white);
+    border: 1px solid var(--blue-light);
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 4px;
     flex-shrink: 0;
     padding: 0;
 }
 
 .live-sensors {
-    grid-column: 7 / 11;
+    grid-column: 13 / 21;
     grid-row: 2;
-    background: #f8f8f8;
-    border: 1px solid #2c3e50;
+    background: var(--white);
+    border: 1px solid var(--blue-dark);
     border-top: none;
     border-left: none;
-    padding: 0 !important;
+    padding: 15px !important;
     margin: 0 !important;
     display: flex;
     flex-direction: column;
@@ -149,7 +230,7 @@ body {
 .live-sensors h2 {
     margin: 0;
     font-size: 1.2rem;
-    color: #333;
+    color: var(--text-dark);
     flex-shrink: 0;
 }
 
@@ -160,12 +241,12 @@ body {
 }
 
 .control-buttons {
-    grid-column: 7 / 11;
+    grid-column: 13 / 21;
     grid-row: 3;
     display: flex;
     gap: 0;
-    background: #f0f0f0;
-    border: 1px solid #2c3e50;
+    background: var(--blue-bg);
+    border: 1px solid var(--blue-dark);
     border-top: none;
     border-left: none;
     padding: 0 !important;
@@ -178,17 +259,16 @@ body {
 .control-btn {
     width: 80px;
     height: 80px;
-    background: #4CAF50;
-    border: 2px solid #2e7d32;
-    border-radius: 8px;
-    color: white;
+    background: var(--color-button);
+    border: 2px solid var(--blue-dark);
+    color: var(--white);
     font-size: 28px;
     cursor: pointer;
     transition: all 0.2s;
 }
 
 .control-btn:hover {
-    background: #66BB6A;
+    background: var(--color-button-hover);
     transform: scale(1.05);
 }
 
@@ -197,25 +277,25 @@ body {
 }
 
 .live-instructions {
-    grid-column: 1 / 7;
+    grid-column: 1 / 13;
     grid-row: 4;
-    background: #fff;
-    border: 1px solid #2c3e50;
+    background: var(--white);
+    border: 1px solid var(--blue-dark);
     border-top: none;
-    padding: 0 !important;
+    padding: 15px !important;
     margin: 0 !important;
     display: flex;
     flex-direction: column;
 }
 
 .live-acknowledge {
-    grid-column: 7 / 9;
+    grid-column: 13 / 17;
     grid-row: 4;
-    background: #fff;
-    border: 1px solid #2c3e50;
+    background: var(--white);
+    border: 1px solid var(--blue-dark);
     border-top: none;
     border-left: none;
-    padding: 0 !important;
+    padding: 15px !important;
     margin: 0 !important;
     display: flex;
     flex-direction: column;
@@ -223,13 +303,13 @@ body {
 }
 
 .live-status {
-    grid-column: 9 / 11;
+    grid-column: 17 / 21;
     grid-row: 4;
-    background: #fff;
-    border: 1px solid #2c3e50;
+    background: var(--white);
+    border: 1px solid var(--blue-dark);
     border-top: none;
     border-left: none;
-    padding: 0 !important;
+    padding: 15px !important;
     margin: 0 !important;
     display: flex;
     flex-direction: column;
@@ -240,7 +320,7 @@ body {
 .live-acknowledge h3 {
     margin: 0;
     font-size: 1rem;
-    color: #333;
+    color: var(--text-dark);
     flex-shrink: 0;
 }
 
@@ -275,7 +355,6 @@ body {
     height: 60px;
     background: #4CAF50;
     border: 2px solid #2e7d32;
-    border-radius: 8px;
     color: white;
     font-size: 24px;
     cursor: pointer;

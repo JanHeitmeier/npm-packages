@@ -55,7 +55,29 @@ export class EditorRenderer implements ViewHandle {
     private onStateChange(): void {
         const recipe = recipeState.getCurrentRecipe();
         if (recipe) {
-            this.currentRecipe = { ...recipe };
+            // Only update if we don't have a current recipe or if the IDs match
+            // This prevents overwriting an imported/edited recipe with an old one from state
+            if (!this.currentRecipe.id || this.currentRecipe.id === recipe.id) {
+                // Deep copy to avoid reference issues with steps array
+                this.currentRecipe = {
+                    id: recipe.id,
+                    name: recipe.name,
+                    description: recipe.description,
+                    steps: recipe.steps.map(step => ({
+                        stepTypeId: step.stepTypeId,
+                        parameters: { ...step.parameters },
+                        aliases: { ...step.aliases },
+                        order: step.order
+                    })),
+                    author: recipe.author,
+                    version: recipe.version,
+                    createdAt: recipe.createdAt,
+                    lastModified: recipe.lastModified
+                };
+                console.log('[EditorRenderer] Recipe loaded from state:', this.currentRecipe.id);
+            } else {
+                console.log('[EditorRenderer] Ignoring state change - different recipe ID (current:', this.currentRecipe.id, 'state:', recipe.id, ')');
+            }
         }
         
         const availableSteps = recipeState.getAvailableSteps();
@@ -97,6 +119,36 @@ export class EditorRenderer implements ViewHandle {
         }
         
         this.render();
+    }
+
+    private updateRecipeInLocalStorage(recipe: any): void {
+        try {
+            const cachedRecipes = localStorage.getItem('recipe_available_recipes');
+            let recipes = cachedRecipes ? JSON.parse(cachedRecipes) : { recipes: [] };
+            
+            const recipeInfo = {
+                id: recipe.id,
+                name: recipe.name,
+                description: recipe.description,
+                version: recipe.version,
+                createdAt: Date.now(),
+                lastModified: Date.now()
+            };
+            
+            // Find and update or add recipe
+            const existingIndex = recipes.recipes.findIndex((r: any) => r.id === recipe.id);
+            if (existingIndex >= 0) {
+                recipes.recipes[existingIndex] = recipeInfo;
+                console.log('[EditorRenderer] Updated recipe in localStorage:', recipe.id);
+            } else {
+                recipes.recipes.push(recipeInfo);
+                console.log('[EditorRenderer] Added recipe to localStorage:', recipe.id);
+            }
+            
+            localStorage.setItem('recipe_available_recipes', JSON.stringify(recipes));
+        } catch (error) {
+            console.error('[EditorRenderer] Error updating recipe in localStorage:', error);
+        }
     }
 
     private loadRecipeList(): void {
@@ -254,6 +306,15 @@ export class EditorRenderer implements ViewHandle {
             case 'save':
                 this.saveRecipe();
                 break;
+            case 'delete':
+                this.deleteRecipe();
+                break;
+            case 'import':
+                this.importRecipe();
+                break;
+            case 'export':
+                this.exportRecipe();
+                break;
             case 'open-step-selector':
                 this.openStepSelector();
                 break;
@@ -308,8 +369,20 @@ export class EditorRenderer implements ViewHandle {
                           this.currentRecipe.steps.length > 0;
         
         if (hasContent) {
-            if (confirm('Are you sure you want to remove the filled in fields?')) {
-                this.newRecipe();
+            const choice = confirm('Du hast ungespeicherte Änderungen. Möchtest du sie speichern?\n\nOK = Speichern und neues Rezept\nAbbrechen = Verwerfen und neues Rezept');
+            
+            if (choice) {
+                // User wants to save first
+                this.saveRecipe();
+                // After successful save, create new recipe
+                setTimeout(() => {
+                    this.newRecipe();
+                }, 100);
+            } else {
+                // Ask again to confirm discarding
+                if (confirm('Wirklich verwerfen ohne zu speichern?')) {
+                    this.newRecipe();
+                }
             }
         } else {
             this.newRecipe();
@@ -458,22 +531,17 @@ export class EditorRenderer implements ViewHandle {
             const availableRecipes = recipeState.getAvailableRecipes();
             if (availableRecipes && availableRecipes.recipes) {
                 const existingRecipe = availableRecipes.recipes.find(r => r.id === this.currentRecipe.id);
-                if (existingRecipe) {
-                    // Recipe exists - check if we're loading an existing recipe
-                    const originalRecipe = recipeState.getCurrentRecipe();
-                    if (originalRecipe && originalRecipe.id === this.currentRecipe.id && 
-                        originalRecipe.version === this.currentRecipe.version) {
-                        // Same version - warn user
-                        if (!confirm(`Du speicherst Änderungen mit derselben Versionsnummer (${this.currentRecipe.version}).\n\nMöchtest du die Version erhöhen oder trotzdem mit derselben Version speichern?\n\nOK = Mit gleicher Version speichern\nAbbrechen = Versionsnummer anpassen`)) {
-                            return;
-                        }
-                    }
+                if (existingRecipe && existingRecipe.version !== this.currentRecipe.version) {
+                    // Version changed - create new file with new ID
+                    console.log('[EditorRenderer] Version changed, creating new recipe file');
+                    this.currentRecipe.id = '';  // Clear ID to force new file creation
                 }
             }
         }
 
-        // Generate ID with name, version and timestamp if new recipe
+        // Generate ID with name, version and timestamp if new recipe or version changed
         // Format: NAME_v1_0_recipe_1234567890
+        const currentTime = Date.now();
         if (!this.currentRecipe.id || this.currentRecipe.id === '') {
             const sanitizedName = this.currentRecipe.name.trim()
                 .replace(/[^a-zA-Z0-9_-]/g, '_')  // Replace special chars with underscore
@@ -484,9 +552,12 @@ export class EditorRenderer implements ViewHandle {
                 .replace(/\./g, '_')                // Replace dots with underscores (v1.0 -> v1_0)
                 .replace(/[^a-zA-Z0-9_]/g, '');    // Remove other special chars
             
-            const timestamp = Date.now();
-            this.currentRecipe.id = `${sanitizedName}_v${sanitizedVersion}_recipe_${timestamp}`;
+            this.currentRecipe.id = `${sanitizedName}_v${sanitizedVersion}_recipe_${currentTime}`;
+            this.currentRecipe.createdAt = currentTime;  // Set creation timestamp for new recipe
         }
+        
+        // Always update lastModified timestamp when saving
+        this.currentRecipe.lastModified = currentTime;
 
         console.log('[EditorRenderer] Saving recipe:', this.currentRecipe);
 
@@ -550,6 +621,131 @@ export class EditorRenderer implements ViewHandle {
             this.selectedStepIndex = toIndex;
         }
         this.render();
+    }
+
+    private deleteRecipe(): void {
+        if (!this.sendCommandFn) {
+            console.error('[EditorRenderer] Send function not configured');
+            return;
+        }
+
+        if (!this.currentRecipe.id || this.currentRecipe.id === '') {
+            alert('Kein Rezept zum Löschen geladen');
+            return;
+        }
+
+        if (!confirm(`Möchtest du das Rezept "${this.currentRecipe.name}" wirklich löschen?`)) {
+            return;
+        }
+
+        console.log('[EditorRenderer] Deleting recipe:', this.currentRecipe.id);
+        this.sendCommandFn({
+            command: 'delete_recipe',
+            recipeId: this.currentRecipe.id,
+        });
+
+        this.newRecipe();
+        alert('Rezept wurde gelöscht');
+    }
+
+    private importRecipe(): void {
+        // Create file input element
+        const fileInput = document.createElement('input');
+        fileInput.type = 'file';
+        fileInput.accept = '.json';
+        
+        fileInput.addEventListener('change', (e) => {
+            const file = (e.target as HTMLInputElement).files?.[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                try {
+                    const json = event.target?.result as string;
+                    const recipe = JSON.parse(json);
+                    
+                    // Validate basic recipe structure
+                    if (!recipe.name || !recipe.steps) {
+                        alert('Ungültiges Rezept-Format: Name und Steps sind erforderlich');
+                        return;
+                    }
+                    
+                    // Load into editor (clear ID to treat as new, but preserve timestamps if they exist)
+                    this.currentRecipe = {
+                        id: '',  // Clear ID to create new recipe on save
+                        name: recipe.name || '',
+                        description: recipe.description || '',
+                        author: recipe.author || '',
+                        version: recipe.version || '1.0',
+                        steps: recipe.steps || [],
+                        createdAt: recipe.createdAt,  // Preserve original creation timestamp if available
+                        lastModified: recipe.lastModified  // Preserve last modified timestamp if available
+                    };
+                    
+                    console.log('[EditorRenderer] Recipe imported with', this.currentRecipe.steps.length, 'steps');
+                    console.log('[EditorRenderer] Steps data:', JSON.stringify(this.currentRecipe.steps, null, 2));
+                    
+                    // Ensure availableSteps are loaded
+                    const availableSteps = recipeState.getAvailableSteps();
+                    if (!availableSteps || !availableSteps.steps || availableSteps.steps.length === 0) {
+                        console.warn('[EditorRenderer] availableSteps not loaded, requesting from backend');
+                        if (this.sendCommandFn) {
+                            this.sendCommandFn({ command: 'get_available_steps' });
+                        }
+                    } else {
+                        console.log('[EditorRenderer] availableSteps loaded:', availableSteps.steps.length, 'steps');
+                    }
+                    
+                    this.selectedStepIndex = -1;
+                    this.render();
+                    
+                    console.log('[EditorRenderer] Recipe imported:', recipe.name);
+                    alert(`Rezept "${recipe.name}" importiert. Bitte speichern, um es auf der Maschine zu speichern.`);
+                } catch (error) {
+                    console.error('[EditorRenderer] Error importing recipe:', error);
+                    alert('Fehler beim Importieren: Ungültiges JSON-Format');
+                }
+            };
+            
+            reader.readAsText(file);
+        });
+        
+        fileInput.click();
+    }
+
+    private exportRecipe(): void {
+        if (!this.currentRecipe.name) {
+            alert('Bitte gib dem Rezept zuerst einen Namen');
+            return;
+        }
+        
+        // Create JSON string
+        const recipeJson = JSON.stringify(this.currentRecipe, null, 2);
+        
+        // Create download link
+        const blob = new Blob([recipeJson], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        
+        // Create filename with timestamp in readable format (ISO 8601)
+        const sanitizedName = this.currentRecipe.name.replace(/[^a-zA-Z0-9]/g, '_');
+        const sanitizedVersion = this.currentRecipe.version.replace(/\./g, '_');
+        
+        // Format timestamp as ISO 8601 date string (YYYY-MM-DD)
+        const timestamp = this.currentRecipe.createdAt || Date.now();
+        const date = new Date(timestamp);
+        const isoDate = date.toISOString().split('T')[0]; // YYYY-MM-DD
+        
+        link.download = `${sanitizedName}_v${sanitizedVersion}_${isoDate}.json`;
+        
+        // Trigger download
+        link.click();
+        
+        // Cleanup
+        URL.revokeObjectURL(url);
+        
+        console.log('[EditorRenderer] Recipe exported:', this.currentRecipe.name);
     }
 
     destroy(): void {

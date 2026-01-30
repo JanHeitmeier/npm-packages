@@ -135,6 +135,31 @@ function routeTypedMessage(message: any): void {
     switch (message.type) {
         case 'liveview':
             recipeState.setLiveView(data);
+            // When LiveView is received, check if we need to load recipe details
+            const currentRecipe = recipeState.getCurrentRecipe();
+            if (data.recipeId) {
+                if (!currentRecipe || currentRecipe.id !== data.recipeId) {
+                    console.log('[RecipeManagement] LiveView received, looking for recipe:', data.recipeId);
+                    // First try to find recipe in availableRecipes (browser state)
+                    const availableRecipes = recipeState.getAvailableRecipes();
+                    const foundRecipe = availableRecipes?.recipes?.find(r => r.id === data.recipeId);
+                    
+                    if (foundRecipe) {
+                        console.log('[RecipeManagement] Recipe found in availableRecipes, requesting full details');
+                        // Found in list, but we need full RecipeDto with steps, so request it
+                        if (globalSendFunction) {
+                            globalSendFunction({ command: 'get_recipe', recipeId: data.recipeId });
+                        }
+                    } else {
+                        console.log('[RecipeManagement] Recipe not in availableRecipes, requesting from backend');
+                        if (globalSendFunction) {
+                            globalSendFunction({ command: 'get_recipe', recipeId: data.recipeId });
+                        }
+                    }
+                } else {
+                    console.log('[RecipeManagement] Recipe already loaded for:', data.recipeId);
+                }
+            }
             break;
         case 'available_recipes':
             console.log('[RecipeManagement] Setting available recipes with', message.recipes?.length || 0, 'recipes');
@@ -163,6 +188,31 @@ function routeUntypedMessage(message: any): void {
     if (message.recipeStatus && message.currentStepIndex !== undefined) {
         console.log('[RecipeManagement] Detected as LiveViewDto');
         recipeState.setLiveView(message);
+        // When LiveView is received, check if we need to load recipe details
+        const currentRecipe = recipeState.getCurrentRecipe();
+        if (message.recipeId) {
+            if (!currentRecipe || currentRecipe.id !== message.recipeId) {
+                console.log('[RecipeManagement] LiveView received, looking for recipe:', message.recipeId);
+                // First try to find recipe in availableRecipes (browser state)
+                const availableRecipes = recipeState.getAvailableRecipes();
+                const foundRecipe = availableRecipes?.recipes?.find(r => r.id === message.recipeId);
+                
+                if (foundRecipe) {
+                    console.log('[RecipeManagement] Recipe found in availableRecipes, requesting full details');
+                    // Found in list, but we need full RecipeDto with steps, so request it
+                    if (globalSendFunction) {
+                        globalSendFunction({ command: 'get_recipe', recipeId: message.recipeId });
+                    }
+                } else {
+                    console.log('[RecipeManagement] Recipe not in availableRecipes, requesting from backend');
+                    if (globalSendFunction) {
+                        globalSendFunction({ command: 'get_recipe', recipeId: message.recipeId });
+                    }
+                }
+            } else {
+                console.log('[RecipeManagement] Recipe already loaded for:', message.recipeId);
+            }
+        }
     } else if (message.recipes && Array.isArray(message.recipes)) {
         console.log('[RecipeManagement] Detected as AvailableRecipesDto');
         recipeState.setAvailableRecipes(message);

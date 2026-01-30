@@ -16,7 +16,9 @@ export class DashboardRenderer implements ViewHandle {
         this.container = container;
         this.container.classList.add('recipe-mgmt-dashboard');
         this.unsubscribe = recipeState.subscribe(() => this.onStateChange());
-        this.loadRecipeList();
+        
+        // Request recipe list immediately on construction
+        this.requestRecipeList();
     }
 
     setSendFunction(sendFn: (cmd: any) => void): void {
@@ -120,29 +122,19 @@ export class DashboardRenderer implements ViewHandle {
                     <p>Recipe Management</p>
                 </div>
 
-                <div class="recipe-start">
+                <div class="recipe-start dashboard-field">
                     <h2>Start Recipe</h2>
                     ${this.renderRecipeList(availableRecipes)}
                 </div>
 
-                <div class="quick-stats">
+                <div class="quick-stats dashboard-field">
                     <h2>Overview</h2>
                     <p>Available Recipes: ${availableRecipes?.recipes?.length || 0}</p>
                 </div>
 
-                <div class="recipe-history">
+                <div class="recipe-history dashboard-field">
                     <h2>Recent Recipes</h2>
                     <p>No history available</p>
-                </div>
-
-                <div class="error-log">
-                    <h2>Recent Errors</h2>
-                    <p>No errors</p>
-                </div>
-
-                <div class="maintenance">
-                    <h2>Maintenance</h2>
-                    <p>No pending maintenance</p>
                 </div>
             </div>
             
@@ -196,7 +188,9 @@ export class DashboardRenderer implements ViewHandle {
             <select id="recipe-select" style="width: 100%; padding: 8px; margin-bottom: 10px;">
                 <option value="">-- Select Recipe --</option>
                 ${availableRecipes.recipes.map((recipe: any) => `
-                    <option value="${escapeHtml(recipe.id)}" ${this.currentlySelectedRecipeId === recipe.id ? 'selected' : ''}>${escapeHtml(recipe.name)}</option>
+                    <option value="${escapeHtml(recipe.id)}" ${this.currentlySelectedRecipeId === recipe.id ? 'selected' : ''}>
+                        ${escapeHtml(recipe.name)} (v${escapeHtml(recipe.version || '1.0')})
+                    </option>
                 `).join('')}
             </select>
             <button class="btn-primary" data-action="start" style="padding: 12px 24px; background: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; width: 100%;">▶ Start Recipe</button>

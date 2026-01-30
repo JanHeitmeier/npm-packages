@@ -1,4 +1,4 @@
-/* Recipe Editor Grid Layout - Similar to LiveView */
+/* Recipe Editor Grid mit neuem Farbschema */
 
 .recipe-mgmt-editor {
     position: absolute;
@@ -21,19 +21,20 @@
     padding: 0;
     margin: 0;
     box-sizing: border-box;
+    gap: 0;
 }
 
-/* Header - Title and Actions */
+/* Header - Titel mit dunkelblauem Hintergrund */
 .editor-title {
     grid-column: 1 / 4;
     grid-row: 1;
-    background: #667eea;
-    border: 1px solid #2c3e50;
+    background: var(--blue-dark);
+    border: 1px solid var(--blue-deep);
     padding: 0;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: white;
+    color: var(--white);
 }
 
 .editor-title h1 {
@@ -42,11 +43,12 @@
     font-weight: bold;
 }
 
+/* Header - Action Buttons */
 .editor-actions {
     grid-column: 4 / 11;
     grid-row: 1;
-    background: #f0f0f0;
-    border: 1px solid #2c3e50;
+    background: var(--blue-bg);
+    border: 1px solid var(--blue-dark);
     border-left: none;
     padding: 10px;
     display: flex;
@@ -55,12 +57,12 @@
     justify-content: flex-end;
 }
 
-/* Recipe Details - Fixed, non-scrollable */
+/* Recipe Details */
 .editor-details {
     grid-column: 1 / 4;
     grid-row: 2;
-    background: #f8f8f8;
-    border: 1px solid #2c3e50;
+    background: var(--white);
+    border: 1px solid var(--blue-dark);
     border-top: none;
     padding: 15px;
     overflow: hidden;
@@ -71,7 +73,7 @@
 .editor-details h2 {
     margin: 0 0 15px 0;
     font-size: 1.2rem;
-    color: #333;
+    color: var(--text-dark);
 }
 
 .details-form {
@@ -89,13 +91,13 @@
 .form-group label {
     font-size: 0.9rem;
     font-weight: 500;
-    color: #555;
+    color: var(--text-dark);
 }
 
 .form-group input,
 .form-group textarea {
     padding: 8px;
-    border: 1px solid #ddd;
+    border: 1px solid var(--blue-light);
     border-radius: 4px;
     font-size: 0.9rem;
 }
@@ -105,12 +107,12 @@
     min-height: 60px;
 }
 
-/* Steps List - Scrollable */
+/* Steps List */
 .editor-steps-list {
     grid-column: 4 / 7;
     grid-row: 2;
-    background: #fff;
-    border: 1px solid #2c3e50;
+    background: var(--white);
+    border: 1px solid var(--blue-dark);
     border-top: none;
     border-left: none;
     display: flex;
@@ -120,18 +122,20 @@
 
 .steps-list-header {
     padding: 15px;
-    background: #f0f0f0;
-    border-bottom: 1px solid #ddd;
+    background: var(--blue-bg);
+    border-bottom: 1px solid var(--blue-light);
     display: flex;
     justify-content: space-between;
     align-items: center;
     flex-shrink: 0;
+    min-height: 60px;
+    height: 60px;
 }
 
 .steps-list-header h2 {
     margin: 0;
     font-size: 1.2rem;
-    color: #333;
+    color: var(--text-dark);
 }
 
 .steps-list-content {
@@ -142,8 +146,8 @@
 }
 
 .step-item {
-    background: white;
-    border: 2px solid #ddd;
+    background: var(--white);
+    border: 2px solid var(--blue-light);
     border-radius: 6px;
     padding: 12px;
     margin-bottom: 10px;
@@ -152,14 +156,14 @@
 }
 
 .step-item:hover {
-    border-color: #667eea;
-    background: #f8f9ff;
+    border-color: var(--blue-base);
+    background: var(--blue-bg);
 }
 
 .step-item.selected {
-    border-color: #667eea;
-    background: #e8ecff;
-    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+    border-color: var(--blue-base);
+    background: var(--blue-bg);
+    box-shadow: 0 2px 8px var(--color-shadow);
 }
 
 .step-item-header {
@@ -170,8 +174,8 @@
 }
 
 .step-number {
-    background: #667eea;
-    color: white;
+    background: var(--blue-base);
+    color: var(--white);
     width: 28px;
     height: 28px;
     border-radius: 50%;
@@ -185,7 +189,7 @@
 .step-type-name {
     flex: 1;
     font-weight: 500;
-    color: #333;
+    color: var(--text-dark);
 }
 
 .step-actions {
@@ -196,18 +200,18 @@
 .step-category {
     display: inline-block;
     padding: 2px 8px;
-    background: #e0e0e0;
+    background: var(--blue-bg);
     border-radius: 4px;
     font-size: 0.8rem;
-    color: #666;
+    color: var(--text-light);
 }
 
-/* Step Parameters - Scrollable on overflow */
+/* Step Parameters */
 .editor-step-parameters {
     grid-column: 7 / 11;
     grid-row: 2;
-    background: #f8f8f8;
-    border: 1px solid #2c3e50;
+    background: var(--white);
+    border: 1px solid var(--blue-dark);
     border-top: none;
     border-left: none;
     display: flex;
@@ -217,15 +221,17 @@
 
 .parameters-header {
     padding: 15px;
-    background: #f0f0f0;
-    border-bottom: 1px solid #ddd;
+    background: var(--blue-bg);
+    border-bottom: 1px solid var(--blue-light);
     flex-shrink: 0;
+    min-height: 60px;
+    height: 60px;
 }
 
 .parameters-header h2 {
     margin: 0;
     font-size: 1.2rem;
-    color: #333;
+    color: var(--text-dark);
 }
 
 .parameters-content {
@@ -243,17 +249,17 @@
     display: block;
     font-size: 0.9rem;
     font-weight: 500;
-    color: #555;
+    color: var(--text-dark);
     margin-bottom: 4px;
 }
 
-/* New wider parameter layout */
+/* Breites Parameter Layout */
 .parameter-item-wide {
     margin-bottom: 20px;
     padding: 15px;
-    border: 1px solid #e0e0e0;
+    border: 1px solid var(--blue-light);
     border-radius: 6px;
-    background: #fafafa;
+    background: var(--blue-bg);
 }
 
 .parameter-label-section {

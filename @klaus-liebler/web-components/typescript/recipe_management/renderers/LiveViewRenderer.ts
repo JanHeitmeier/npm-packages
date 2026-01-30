@@ -11,6 +11,7 @@ export class LiveViewRenderer implements ViewHandle {
     private container: HTMLElement;
     private unsubscribe: (() => void) | null = null;
     private sendCommandFn: ((cmd: any) => void) | null = null;
+    private isDescriptionModalOpen: boolean = false;
 
     constructor(container: HTMLElement) {
         this.container = container;
@@ -29,6 +30,17 @@ export class LiveViewRenderer implements ViewHandle {
 
     render(): void {
         const liveView = recipeState.getLiveView();
+        
+        console.log('[LiveViewRenderer] render() called, liveView:', liveView ? 'AVAILABLE' : 'NULL');
+        if (liveView) {
+            console.log('[LiveViewRenderer] LiveView data:', {
+                recipeId: liveView.recipeId,
+                recipeName: liveView.recipeName,
+                recipeStatus: liveView.recipeStatus,
+                currentStepIndex: liveView.currentStepIndex,
+                totalSteps: liveView.totalSteps
+            });
+        }
         
         if (!liveView) {
             this.container.innerHTML = `
@@ -73,19 +85,52 @@ export class LiveViewRenderer implements ViewHandle {
             return;
         }
 
+        const currentRecipe = recipeState.getCurrentRecipe();
+        console.log('[LiveViewRenderer] currentRecipe:', currentRecipe ? currentRecipe.name : 'NULL');
+        
+        const lastModified = currentRecipe?.lastModified 
+            ? new Date(currentRecipe.lastModified).toLocaleString('de-DE', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit'
+              })
+            : 'N/A';
+
         this.container.innerHTML = `
             <div class="live-view-container">
                 <div class="live-title">
-                    ${escapeHtml(liveView.recipeName)} 
+                    ${escapeHtml(liveView.recipeName || currentRecipe?.name || 'Unknown Recipe')} 
                     <span class="status-badge status-${liveView.recipeStatus}">${liveView.recipeStatus}</span>
                 </div>
 
                 <div class="live-details">
                     <h2>Details</h2>
                     <div class="details-content">
-                        Recipe ID: ${escapeHtml(liveView.recipeId)}<br>
-                        Step: ${liveView.currentStepIndex + 1} / ${liveView.totalSteps}<br>
-                        Progress: ${Math.round(liveView.progress * 100)}%
+                        <div class="detail-column">
+                            <div class="detail-row">
+                                <span class="detail-label">Name:</span>
+                                <span class="detail-value">${escapeHtml(liveView.recipeName || currentRecipe?.name || 'N/A')}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Author:</span>
+                                <span class="detail-value">${escapeHtml(currentRecipe?.author || 'N/A')}</span>
+                            </div>
+                        </div>
+                        <div class="detail-column">
+                            <div class="detail-row">
+                                <span class="detail-label">Version:</span>
+                                <span class="detail-value">${escapeHtml(currentRecipe?.version || 'N/A')}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Modified:</span>
+                                <span class="detail-value">${lastModified}</span>
+                            </div>
+                        </div>
+                        <div class="detail-column">
+                            <button class="detail-btn" data-action="show-description">📄 Description</button>
+                        </div>
                     </div>
                 </div>
 
@@ -137,14 +182,36 @@ export class LiveViewRenderer implements ViewHandle {
                         ${liveView.errorMessage ? escapeHtml(liveView.errorMessage) : 'Active'}
                     </div>
                 </div>
-            </div>
-        `;
+                
+                ${this.isDescriptionModalOpen ? this.renderDescriptionModal() : ''}
+            `;
 
         this.attachEventListeners();
     }
 
+    private renderDescriptionModal(): string {
+        const currentRecipe = recipeState.getCurrentRecipe();
+        const description = currentRecipe?.description || 'No description available';
+        
+        return `
+            <div class="modal-overlay" data-action="close-description" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 10000;">
+                <div class="modal-content" style="max-width: 600px; background: white; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); max-height: 80vh; overflow: auto;" onclick="event.stopPropagation()">
+                    <div class="modal-header" style="padding: 20px; border-bottom: 1px solid #e0e0e0; position: relative;">
+                        <h2 style="margin: 0;">Recipe Description</h2>
+                        <button class="modal-close" data-action="close-description" style="position: absolute; top: 10px; right: 10px; background: none; border: none; font-size: 24px; cursor: pointer; color: #666;">×</button>
+                    </div>
+                    <div class="modal-body" style="padding: 20px; white-space: pre-wrap; line-height: 1.6;">
+                        ${escapeHtml(description)}
+                    </div>
+                    <div class="modal-footer" style="padding: 20px; border-top: 1px solid #e0e0e0; display: flex; justify-content: flex-end;">
+                        <button class="btn-secondary" data-action="close-description" style="padding: 10px 20px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer;">Close</button>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
     private renderSteps(liveView: LiveViewDto): string {
-        // Get current recipe to access step type IDs
         const currentRecipe = recipeState.getCurrentRecipe();
         const availableSteps = recipeState.getAvailableSteps();
         
@@ -216,6 +283,18 @@ export class LiveViewRenderer implements ViewHandle {
     }
 
     private handleAction(action: string): void {
+        if (action === 'show-description') {
+            this.isDescriptionModalOpen = true;
+            this.render();
+            return;
+        }
+        
+        if (action === 'close-description') {
+            this.isDescriptionModalOpen = false;
+            this.render();
+            return;
+        }
+        
         if (!this.sendCommandFn) {
             console.error('Send function not configured');
             return;

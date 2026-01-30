@@ -108,6 +108,16 @@
     resize: vertical;
 }
 
+.timestamp-display {
+    padding: 8px 10px;
+    background-color: #f0f0f0;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 0.95rem;
+    color: #555;
+    font-family: 'Courier New', monospace;
+}
+
 .recipe-steps-editor {
     display: flex;
     flex-direction: column;

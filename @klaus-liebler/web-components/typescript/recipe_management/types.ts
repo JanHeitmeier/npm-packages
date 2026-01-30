@@ -25,8 +25,9 @@ export interface RecipeInfoDto {
     id: string;
     name: string;
     description: string;
-    createdAt: number;
-    lastModified: number;
+    version: string;
+    createdAt: number;  // Unix timestamp in milliseconds
+    lastModified: number;  // Unix timestamp in milliseconds
 }
 
 export interface AvailableRecipesDto {
@@ -81,6 +82,8 @@ export interface RecipeDto {
     steps: StepConfigDto[];
     author: string;
     version: string;
+    createdAt?: number;  // Unix timestamp in milliseconds
+    lastModified?: number;  // Unix timestamp in milliseconds
 }
 
 export interface MetricDataPointDto {

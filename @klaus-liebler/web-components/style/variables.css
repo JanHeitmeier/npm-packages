@@ -1,33 +1,44 @@
+/* Zentrales Farbschema */
 :root {
-  --celadon: #A6D49F;
-  --olivine: #9CB380;
-  --caput: #522A27;
-  --sinopia: #C73E1D;
-  --satin: #C59849;
-  --timberwolf: #EADEDA;
-  --cinereous: #998888;
-  --silver: #BFB8AD;
+  /* Basis Blau-Palette */
+  --blue-base: #266998;
+  --blue-dark: #084976;
+  --blue-light: #5188AF;
+  --blue-deep: #033457;
+  --blue-bg: #E9E9E9;
+  
+  /* Status Farben */
+  --warning-yellow: #FFC107;
+  --error-red: #D32F2F;
+  --success-green: #4CAF50;
+  
+  /* Neutrale Farben */
   --white: #ffffff;
   --black: #000000;
-  --color-primary: #A6D49F;
-  --color-secondary: #9CB380;
-  --color-accent: #C73E1D;
-  --color-bg: #EADEDA;
-  --color-panel: #ffffff;
+  --text-dark: #333;
+  --text-light: #666;
+  
+  /* Anwendungs-Mapping */
+  --color-primary: var(--blue-base);
+  --color-secondary: var(--blue-light);
+  --color-accent: var(--blue-dark);
+  --color-bg: var(--blue-bg);
+  --color-panel: var(--white);
   --color-shadow: rgba(0, 0, 0, 0.1);
   --color-border: #ccc;
   --color-input-bg: #f9f9f9;
   --color-input-border: #ccc;
-  --color-button: #998888;
-  --color-button-hover: #BFB8AD;
+  --color-button: var(--blue-base);
+  --color-button-hover: var(--blue-dark);
+  --color-error: var(--error-red);
+  --color-warning: var(--warning-yellow);
+  --color-success: var(--success-green);
+  
+  /* Layout */
   --radius: 10px;
   --shadow: 0 4px 8px var(--color-shadow);
   --font-main: "Dosis", sans-serif;
-  --accent: #b4e0b4;
-  --neutral: #dcdcd5;
-  --highlight: #a6d49f;
-  --error: #ff6f61;
-  --bg: #fefefe;
+  --bg: var(--white);
   --border: #ccc;
-  --text: #333;
+  --text: var(--text-dark);
 }
