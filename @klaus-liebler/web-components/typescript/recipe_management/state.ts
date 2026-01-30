@@ -3,7 +3,8 @@ import type {
     AvailableRecipesDto,
     AvailableStepsDto,
     RecipeDto,
-    MetricsDto,
+    ExecutionHistoryDto,
+    TimeSeriesDataDto,
 } from './types';
 
 type StateChangeListener = () => void;
@@ -13,7 +14,8 @@ export class RecipeState {
     private availableRecipes: AvailableRecipesDto | null = null;
     private availableSteps: AvailableStepsDto | null = null;
     private currentRecipe: RecipeDto | null = null;
-    private metrics: MetricsDto | null = null;
+    private executionHistory: ExecutionHistoryDto | null = null;
+    private timeSeriesData: TimeSeriesDataDto | null = null;
     
     private listeners: Set<StateChangeListener> = new Set();
 
@@ -33,8 +35,23 @@ export class RecipeState {
         return this.currentRecipe;
     }
 
-    getMetrics(): MetricsDto | null {
-        return this.metrics;
+    getExecutionHistory(): ExecutionHistoryDto | null {
+        return this.executionHistory;
+    }
+
+    getTimeSeriesData(): TimeSeriesDataDto | null {
+        return this.timeSeriesData;
+    }
+
+    getState() {
+        return {
+            liveView: this.liveView,
+            availableRecipes: this.availableRecipes,
+            availableSteps: this.availableSteps,
+            currentRecipe: this.currentRecipe,
+            executionHistory: this.executionHistory,
+            timeSeriesData: this.timeSeriesData,
+        };
     }
 
     setLiveView(data: LiveViewDto): void {
@@ -63,8 +80,15 @@ export class RecipeState {
         console.log('[RecipeState] Listeners notified');
     }
 
-    setMetrics(data: MetricsDto): void {
-        this.metrics = data;
+    setExecutionHistory(data: ExecutionHistoryDto): void {
+        console.log('[RecipeState] setExecutionHistory called with', data.executions?.length || 0, 'executions');
+        this.executionHistory = data;
+        this.notifyListeners();
+    }
+
+    setTimeSeriesData(data: TimeSeriesDataDto): void {
+        console.log('[RecipeState] setTimeSeriesData called for execution', data.executionId);
+        this.timeSeriesData = data;
         this.notifyListeners();
     }
 
@@ -87,7 +111,8 @@ export class RecipeState {
         this.availableRecipes = null;
         this.availableSteps = null;
         this.currentRecipe = null;
-        this.metrics = null;
+        this.executionHistory = null;
+        this.timeSeriesData = null;
         this.notifyListeners();
     }
 }

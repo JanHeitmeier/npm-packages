@@ -34,6 +34,23 @@ export class DashboardRenderer implements ViewHandle {
         this.container.classList.add('recipe-mgmt-dashboard');
     }
 
+    private deleteRecipeFromLocalStorage(recipeId: number): void {
+        try {
+            const cachedRecipes = localStorage.getItem('recipe_available_recipes');
+            if (!cachedRecipes) {
+                return;
+            }
+            
+            let recipes = JSON.parse(cachedRecipes);
+            recipes.recipes = recipes.recipes.filter((r: any) => r.id !== recipeId);
+            
+            localStorage.setItem('recipe_available_recipes', JSON.stringify(recipes));
+            console.log('[DashboardRenderer] Deleted recipe from localStorage:', recipeId);
+        } catch (error) {
+            console.error('[DashboardRenderer] Error deleting recipe from localStorage:', error);
+        }
+    }
+
     private onStateChange(): void {
         const availableRecipes = recipeState.getAvailableRecipes();
         if (availableRecipes && availableRecipes.recipes) {
@@ -57,9 +74,6 @@ export class DashboardRenderer implements ViewHandle {
     }
 
     private loadRecipeList(): void {
-        console.log('[DashboardRenderer] Loading recipe list from backend (machine)...');
-        
-
         if (!this.backendRecipesLoaded) {
             console.log('[DashboardRenderer] Requesting recipes from backend');
             this.requestRecipeList();
@@ -90,7 +104,6 @@ export class DashboardRenderer implements ViewHandle {
         }
         
 
-        console.log('[DashboardRenderer] Requesting recipes from backend');
         this.requestRecipeList();
         this.render();
     }
@@ -267,6 +280,8 @@ export class DashboardRenderer implements ViewHandle {
             case 'delete':
                 if (recipeId && confirm(`Rezept "${recipeId}" wirklich löschen?`)) {
                     this.sendCommandFn({ command: 'delete_recipe', recipeId });
+                    // Remove from localStorage immediately
+                    this.deleteRecipeFromLocalStorage(recipeId);
                 }
                 break;
             case 'refresh':

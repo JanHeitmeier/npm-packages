@@ -12,6 +12,7 @@ export class LiveViewRenderer implements ViewHandle {
     private unsubscribe: (() => void) | null = null;
     private sendCommandFn: ((cmd: any) => void) | null = null;
     private isDescriptionModalOpen: boolean = false;
+    private pollingIntervalId: number | null = null;
 
     constructor(container: HTMLElement) {
         this.container = container;
@@ -28,19 +29,28 @@ export class LiveViewRenderer implements ViewHandle {
         this.container.classList.add('recipe-mgmt-live-view');
     }
 
+    private startPolling(): void {
+        this.stopPolling();
+        this.pollingIntervalId = window.setInterval(() => {
+            const liveView = recipeState.getLiveView();
+            if (liveView && (liveView.recipeStatus === 'running' || liveView.recipeStatus === 'paused')) {
+                // Only request updates if there are sensors to monitor
+                if (Object.keys(liveView.sensorValues || {}).length > 0 && this.sendCommandFn) {
+                    this.sendCommandFn({ command: 'request_live_view' });
+                }
+            }
+        }, 500);
+    }
+
+    private stopPolling(): void {
+        if (this.pollingIntervalId !== null) {
+            window.clearInterval(this.pollingIntervalId);
+            this.pollingIntervalId = null;
+        }
+    }
+
     render(): void {
         const liveView = recipeState.getLiveView();
-        
-        console.log('[LiveViewRenderer] render() called, liveView:', liveView ? 'AVAILABLE' : 'NULL');
-        if (liveView) {
-            console.log('[LiveViewRenderer] LiveView data:', {
-                recipeId: liveView.recipeId,
-                recipeName: liveView.recipeName,
-                recipeStatus: liveView.recipeStatus,
-                currentStepIndex: liveView.currentStepIndex,
-                totalSteps: liveView.totalSteps
-            });
-        }
         
         if (!liveView) {
             this.container.innerHTML = `
@@ -86,7 +96,6 @@ export class LiveViewRenderer implements ViewHandle {
         }
 
         const currentRecipe = recipeState.getCurrentRecipe();
-        console.log('[LiveViewRenderer] currentRecipe:', currentRecipe ? currentRecipe.name : 'NULL');
         
         const lastModified = currentRecipe?.lastModified 
             ? new Date(currentRecipe.lastModified).toLocaleString('de-DE', {
@@ -100,10 +109,7 @@ export class LiveViewRenderer implements ViewHandle {
 
         this.container.innerHTML = `
             <div class="live-view-container">
-                <div class="live-title">
-                    ${escapeHtml(liveView.recipeName || currentRecipe?.name || 'Unknown Recipe')} 
-                    <span class="status-badge status-${liveView.recipeStatus}">${liveView.recipeStatus}</span>
-                </div>
+                <div class="live-title">Live View</div>
 
                 <div class="live-details">
                     <h2>Details</h2>
@@ -148,7 +154,7 @@ export class LiveViewRenderer implements ViewHandle {
                 <div class="live-sensors">
                     <h2>Sensors</h2>
                     <div class="sensors-content">
-                        ${this.renderSensors(liveView.sensorValues)}
+                        ${this.renderSensors(liveView.sensorValues || {})}
                     </div>
                 </div>
 
@@ -167,11 +173,9 @@ export class LiveViewRenderer implements ViewHandle {
                     <h3>Acknowledge</h3>
                     <div class="status-buttons">
                         ${liveView.awaitingUserAcknowledgment ? `
-                            <button class="status-btn ack-ok" data-action="acknowledge">✓ OK</button>
-                            <button class="status-btn ack-cancel" data-action="stop">✗ Cancel</button>
+                            <button class="status-btn ack-ok" data-action="acknowledge">✓ Confirm</button>
                         ` : `
-                            <button class="status-btn" disabled>✓</button>
-                            <button class="status-btn" disabled>✗</button>
+                            <button class="status-btn" disabled>—</button>
                         `}
                     </div>
                 </div>
@@ -179,7 +183,9 @@ export class LiveViewRenderer implements ViewHandle {
                 <div class="live-status">
                     <h3>Status</h3>
                     <div class="status-content">
-                        ${liveView.errorMessage ? escapeHtml(liveView.errorMessage) : 'Active'}
+                        <strong>${escapeHtml(liveView.recipeName || currentRecipe?.name || 'Unknown Recipe')}</strong>
+                        <span class="status-badge status-${liveView.recipeStatus}">${liveView.recipeStatus}</span>
+                        <div>${liveView.errorMessage ? escapeHtml(liveView.errorMessage) : 'Active'}</div>
                     </div>
                 </div>
                 
@@ -187,6 +193,14 @@ export class LiveViewRenderer implements ViewHandle {
             `;
 
         this.attachEventListeners();
+        
+        // Start or stop polling based on recipe status and sensor availability
+        if ((liveView.recipeStatus === 'running' || liveView.recipeStatus === 'paused') 
+            && Object.keys(liveView.sensorValues || {}).length > 0) {
+            this.startPolling();
+        } else {
+            this.stopPolling();
+        }
     }
 
     private renderDescriptionModal(): string {
@@ -244,16 +258,25 @@ export class LiveViewRenderer implements ViewHandle {
 
     private renderSensors(sensorValues: Record<string, number>): string {
         const entries = Object.entries(sensorValues);
+        
         if (entries.length === 0) {
             return '<p>No sensor data available</p>';
         }
 
-        return entries.map(([name, value]) => `
-            <div class="sensor-item">
-                <span class="sensor-name">${escapeHtml(name)}:</span>
-                <span class="sensor-value">${value.toFixed(2)}</span>
-            </div>
-        `).join('');
+        return entries.map(([name, value]) => {
+            // Check if this looks like a boolean value (0 or 1)
+            const isBooleanLike = (value === 0 || value === 1) && Number.isInteger(value);
+            const displayValue = isBooleanLike 
+                ? (value === 1 ? '✓ True' : '✗ False')
+                : value.toFixed(2);
+            
+            return `
+                <div class="sensor-item">
+                    <span class="sensor-name">${escapeHtml(name)}:</span>
+                    <span class="sensor-value">${displayValue}</span>
+                </div>
+            `;
+        }).join('');
     }
 
     private renderControlButtons(liveView: LiveViewDto): string {
@@ -261,13 +284,13 @@ export class LiveViewRenderer implements ViewHandle {
         
         if (status === 'running') {
             return `
-                <button class="control-btn" data-action="pause">⏸ Pause</button>
-                <button class="control-btn" data-action="stop">⏹ Stop</button>
+                <button class="control-btn" data-action="pause"><span style="font-size: 1.5em;">⏸</span> Pause</button>
+                <button class="control-btn" data-action="stop"><span style="font-size: 1.5em;">⏹</span> Stop</button>
             `;
         } else if (status === 'paused') {
             return `
-                <button class="control-btn" data-action="resume">▶ Resume</button>
-                <button class="control-btn" data-action="stop">⏹ Stop</button>
+                <button class="control-btn" data-action="resume"><span style="font-size: 1.5em;">▶</span> Resume</button>
+                <button class="control-btn" data-action="stop"><span style="font-size: 1.5em;">⏹</span> Stop</button>
             `;
         } else {
             return '<p>Recipe not active</p>';
@@ -283,6 +306,8 @@ export class LiveViewRenderer implements ViewHandle {
     }
 
     private handleAction(action: string): void {
+        console.log('[LiveViewRenderer] handleAction called with action:', action);
+        
         if (action === 'show-description') {
             this.isDescriptionModalOpen = true;
             this.render();
@@ -309,11 +334,15 @@ export class LiveViewRenderer implements ViewHandle {
 
         const command = commandMap[action];
         if (command) {
+            console.log('[LiveViewRenderer] Sending command:', command);
             this.sendCommandFn({ command });
+        } else {
+            console.warn('[LiveViewRenderer] Unknown action:', action);
         }
     }
 
     destroy(): void {
+        this.stopPolling();
         if (this.unsubscribe) {
             this.unsubscribe();
             this.unsubscribe = null;

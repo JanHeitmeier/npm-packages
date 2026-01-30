@@ -25,9 +25,11 @@ export type {
     AvailableStepsDto,
     StepConfigDto,
     RecipeDto,
-    MetricDataPointDto,
-    MetricSeriesDto,
-    MetricsDto,
+    RecipeExecutionDto,
+    ExecutionHistoryDto,
+    TimeSeriesPointDto,
+    SensorTimeSeriesDto,
+    TimeSeriesDataDto,
     RecipeMessage,
 } from './types';
 

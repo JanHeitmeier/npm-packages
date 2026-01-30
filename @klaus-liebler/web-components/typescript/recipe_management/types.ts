@@ -86,23 +86,38 @@ export interface RecipeDto {
     lastModified?: number;  // Unix timestamp in milliseconds
 }
 
-export interface MetricDataPointDto {
+export interface RecipeExecutionDto {
+    executionId: string;
+    recipeId: string;
+    recipeName: string;
+    startTime: number;
+    endTime: number;
+    duration: number;
+    status: string;
+    errorMessage: string;
+}
+
+export interface ExecutionHistoryDto {
+    executions: RecipeExecutionDto[];
+}
+
+export interface TimeSeriesPointDto {
     timestamp: number;
     value: number;
 }
 
-export interface MetricSeriesDto {
-    name: string;
+export interface SensorTimeSeriesDto {
+    sensorName: string;
     unit: string;
-    data: MetricDataPointDto[];
+    dataPoints: TimeSeriesPointDto[];
 }
 
-export interface MetricsDto {
-    recipeId: string;
-    series: MetricSeriesDto[];
+export interface TimeSeriesDataDto {
+    executionId: string;
+    series: SensorTimeSeriesDto[];
 }
 
 export interface RecipeMessage {
-    type: 'LiveViewDto' | 'AvailableRecipesDto' | 'AvailableStepsDto' | 'RecipeDto' | 'MetricsDto';
-    data: LiveViewDto | AvailableRecipesDto | AvailableStepsDto | RecipeDto | MetricsDto;
+    type: 'LiveViewDto' | 'AvailableRecipesDto' | 'AvailableStepsDto' | 'RecipeDto' | 'ExecutionHistoryDto' | 'TimeSeriesDataDto';
+    data: LiveViewDto | AvailableRecipesDto | AvailableStepsDto | RecipeDto | ExecutionHistoryDto | TimeSeriesDataDto;
 }

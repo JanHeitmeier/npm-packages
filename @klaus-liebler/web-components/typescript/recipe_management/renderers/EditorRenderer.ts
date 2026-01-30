@@ -151,6 +151,23 @@ export class EditorRenderer implements ViewHandle {
         }
     }
 
+    private deleteRecipeFromLocalStorage(recipeId: number): void {
+        try {
+            const cachedRecipes = localStorage.getItem('recipe_available_recipes');
+            if (!cachedRecipes) {
+                return;
+            }
+            
+            let recipes = JSON.parse(cachedRecipes);
+            recipes.recipes = recipes.recipes.filter((r: any) => r.id !== recipeId);
+            
+            localStorage.setItem('recipe_available_recipes', JSON.stringify(recipes));
+            console.log('[EditorRenderer] Deleted recipe from localStorage:', recipeId);
+        } catch (error) {
+            console.error('[EditorRenderer] Error deleting recipe from localStorage:', error);
+        }
+    }
+
     private loadRecipeList(): void {
         console.log('[EditorRenderer] Loading recipe list from backend (machine)...');
         
@@ -639,10 +656,14 @@ export class EditorRenderer implements ViewHandle {
         }
 
         console.log('[EditorRenderer] Deleting recipe:', this.currentRecipe.id);
+        const recipeIdToDelete = Number(this.currentRecipe.id);
         this.sendCommandFn({
             command: 'delete_recipe',
-            recipeId: this.currentRecipe.id,
+            recipeId: recipeIdToDelete,
         });
+
+        // Remove from localStorage immediately
+        this.deleteRecipeFromLocalStorage(recipeIdToDelete);
 
         this.newRecipe();
         alert('Rezept wurde gelöscht');

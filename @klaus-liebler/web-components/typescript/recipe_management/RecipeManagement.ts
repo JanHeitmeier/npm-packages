@@ -173,8 +173,11 @@ function routeTypedMessage(message: any): void {
             console.log('[RecipeManagement] Setting current recipe:', message.name || 'Unknown');
             recipeState.setCurrentRecipe(data);
             break;
-        case 'metrics':
-            recipeState.setMetrics(data);
+        case 'execution_history':
+            recipeState.setExecutionHistory(data);
+            break;
+        case 'timeseries':
+            recipeState.setTimeSeriesData(data);
             break;
             
         default:
@@ -222,9 +225,12 @@ function routeUntypedMessage(message: any): void {
     } else if (message.id && message.name && message.steps && Array.isArray(message.steps)) {
         console.log('[RecipeManagement] Detected as RecipeDto');
         recipeState.setCurrentRecipe(message);
-    } else if (message.series && Array.isArray(message.series)) {
-        console.log('[RecipeManagement] Detected as MetricsDto');
-        recipeState.setMetrics(message);
+    } else if (message.executions && Array.isArray(message.executions)) {
+        console.log('[RecipeManagement] Detected as ExecutionHistoryDto');
+        recipeState.setExecutionHistory(message);
+    } else if (message.executionId && message.series && Array.isArray(message.series)) {
+        console.log('[RecipeManagement] Detected as TimeSeriesDataDto');
+        recipeState.setTimeSeriesData(message);
     } else {
         console.warn('[RecipeManagement] Could not infer message type from structure:', message);
     }
