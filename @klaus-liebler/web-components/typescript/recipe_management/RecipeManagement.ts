@@ -174,9 +174,11 @@ function routeTypedMessage(message: any): void {
             recipeState.setCurrentRecipe(data);
             break;
         case 'execution_history':
+            console.log('[RecipeManagement] Setting execution history with', (data.executions && Array.isArray(data.executions)) ? data.executions.length : 0, 'executions');
             recipeState.setExecutionHistory(data);
             break;
         case 'timeseries':
+            console.log('[RecipeManagement] Setting timeseries data with', (data.series && Array.isArray(data.series)) ? data.series.length : 0, 'series');
             recipeState.setTimeSeriesData(data);
             break;
             

@@ -21,13 +21,17 @@ export class AnalyticsRenderer implements ViewHandle {
         this.container.classList.add('recipe-mgmt-analytics');
         this.unsubscribe = recipeState.subscribe(() => this.render());
         
+        console.log('[ANALYTICS] Constructor called, sendCommandFn:', !!this.sendCommandFn);
         if (this.sendCommandFn) {
+            console.log('[ANALYTICS] Requesting execution history from constructor');
             this.sendCommandFn({ command: 'get_execution_history' });
         }
     }
 
     setSendFunction(sendFn: (cmd: any) => void): void {
+        console.log('[ANALYTICS] setSendFunction called');
         this.sendCommandFn = sendFn;
+        console.log('[ANALYTICS] Requesting execution history from setSendFunction');
         this.sendCommandFn({ command: 'get_execution_history' });
     }
 
@@ -111,14 +115,16 @@ export class AnalyticsRenderer implements ViewHandle {
     }
 
     private handleSelectExecution(execution: RecipeExecutionDto): void {
+        console.log('[ANALYTICS] Execution selected:', execution);
         this.selectedExecution = execution;
         this.selectedSensor = null;
         this.timeSeriesData = null;
         
+        console.log('[ANALYTICS] Requesting time series for executionId:', execution.executionId);
         if (this.sendCommandFn) {
             this.sendCommandFn({
                 command: 'get_timeseries',
-                recipeId: execution.executionId
+                executionId: execution.executionId
             });
         }
         
@@ -219,11 +225,24 @@ export class AnalyticsRenderer implements ViewHandle {
         const timeSeriesData = recipeState.getTimeSeriesData();
         const executions = this.getSortedExecutions();
         
+        console.log('[ANALYTICS] Rendering analytics view');
+        console.log('[ANALYTICS] Execution history:', executionHistory);
+        console.log('[ANALYTICS] Time series data:', timeSeriesData);
+        console.log('[ANALYTICS] Selected execution:', this.selectedExecution);
+        
         if (timeSeriesData && timeSeriesData.executionId === this.selectedExecution?.executionId) {
+            console.log('[ANALYTICS] Time series data matches selected execution!');
+            console.log('[ANALYTICS] Series count:', timeSeriesData.series?.length || 0);
             this.timeSeriesData = timeSeriesData;
             if (this.timeSeriesData.series.length > 0 && !this.selectedSensor) {
                 this.selectedSensor = this.timeSeriesData.series[0].sensorName;
+                console.log('[ANALYTICS] Auto-selected first sensor:', this.selectedSensor);
             }
+        } else if (timeSeriesData) {
+            console.warn('[ANALYTICS] Time series data executionId mismatch!', {
+                dataId: timeSeriesData.executionId,
+                selectedId: this.selectedExecution?.executionId
+            });
         }
         
         this.container.innerHTML = `
@@ -397,14 +416,28 @@ export class AnalyticsRenderer implements ViewHandle {
     }
 
     private renderChart(): void {
-        if (!this.timeSeriesData || !this.selectedSensor) return;
+        console.log('[ANALYTICS] renderChart called');
+        console.log('[ANALYTICS] timeSeriesData:', this.timeSeriesData);
+        console.log('[ANALYTICS] selectedSensor:', this.selectedSensor);
+        
+        if (!this.timeSeriesData || !this.selectedSensor) {
+            console.warn('[ANALYTICS] Cannot render chart: missing data or sensor selection');
+            return;
+        }
         
         const sensor = this.timeSeriesData.series.find(s => s.sensorName === this.selectedSensor);
-        if (!sensor) return;
+        if (!sensor) {
+            console.error('[ANALYTICS] Selected sensor not found in series:', this.selectedSensor);
+            return;
+        }
+        
+        console.log('[ANALYTICS] Rendering chart for sensor:', sensor.sensorName, 'with', sensor.dataPoints?.length || 0, 'points');
         
         const canvas = this.container.querySelector('#chart-canvas') as HTMLCanvasElement;
         if (canvas) {
             this.drawChart(canvas, sensor);
+        } else {
+            console.error('[ANALYTICS] Canvas element not found!');
         }
     }
 
