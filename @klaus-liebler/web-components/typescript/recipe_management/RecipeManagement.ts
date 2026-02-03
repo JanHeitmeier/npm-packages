@@ -69,8 +69,6 @@ export function setupRecipeManagement(config: RecipeManagementConfig): void {
     }
 
     importRecipeManagementStyles();
-
-    console.log('Recipe Management initialized with Namespace 11');
 }
 
 function applyCssOverrides(overrides: NonNullable<RecipeManagementConfig['cssOverrides']>): void {
@@ -101,35 +99,25 @@ function importRecipeManagementStyles(): void {
 
 
 export function receiveMessage(jsonMessage: string | any): void {
-    console.log('%c[RecipeManagement] ⬇️ EMPFANGEN:', 'color: #4CAF50; font-weight: bold', jsonMessage);
-    
     let message: any;
     if (typeof jsonMessage === 'string') {
         try {
             message = JSON.parse(jsonMessage);
-            console.log('%c[RecipeManagement] ⬇️ Parsed JSON:', 'color: #4CAF50', message);
         } catch (error) {
-            console.error('[RecipeManagement] Failed to parse message:', error);
             return;
         }
     } else {
         message = jsonMessage;
     }
 
-    console.log('[RecipeManagement] Processing message:', message);
-
     if (message.type) {
-        console.log('[RecipeManagement] Message has type:', message.type);
         routeTypedMessage(message);
     } else {
-        console.log('[RecipeManagement] Message has no type, inferring...');
         routeUntypedMessage(message);
     }
 }
 
 function routeTypedMessage(message: any): void {
-    console.log('[RecipeManagement] routeTypedMessage:', message.type);
-    
     const data = message.data || message;
     
     switch (message.type) {
@@ -139,102 +127,82 @@ function routeTypedMessage(message: any): void {
             const currentRecipe = recipeState.getCurrentRecipe();
             if (data.recipeId) {
                 if (!currentRecipe || currentRecipe.id !== data.recipeId) {
-                    console.log('[RecipeManagement] LiveView received, looking for recipe:', data.recipeId);
                     // First try to find recipe in availableRecipes (browser state)
                     const availableRecipes = recipeState.getAvailableRecipes();
                     const foundRecipe = availableRecipes?.recipes?.find(r => r.id === data.recipeId);
                     
                     if (foundRecipe) {
-                        console.log('[RecipeManagement] Recipe found in availableRecipes, requesting full details');
                         // Found in list, but we need full RecipeDto with steps, so request it
                         if (globalSendFunction) {
                             globalSendFunction({ command: 'get_recipe', recipeId: data.recipeId });
                         }
                     } else {
-                        console.log('[RecipeManagement] Recipe not in availableRecipes, requesting from backend');
                         if (globalSendFunction) {
                             globalSendFunction({ command: 'get_recipe', recipeId: data.recipeId });
                         }
                     }
-                } else {
-                    console.log('[RecipeManagement] Recipe already loaded for:', data.recipeId);
                 }
             }
             break;
         case 'available_recipes':
-            console.log('[RecipeManagement] Setting available recipes with', message.recipes?.length || 0, 'recipes');
             recipeState.setAvailableRecipes(data);
             break;
         case 'available_steps':
-            console.log('[RecipeManagement] Setting available steps with', message.steps?.length || 0, 'steps');
             recipeState.setAvailableSteps(data);
             break;
         case 'recipe':
-            console.log('[RecipeManagement] Setting current recipe:', message.name || 'Unknown');
             recipeState.setCurrentRecipe(data);
             break;
         case 'execution_history':
-            console.log('[RecipeManagement] Setting execution history with', (data.executions && Array.isArray(data.executions)) ? data.executions.length : 0, 'executions');
+            console.log('[RecipeManagement] Received execution_history, storing in state:', data);
             recipeState.setExecutionHistory(data);
             break;
         case 'timeseries':
-            console.log('[RecipeManagement] Setting timeseries data with', (data.series && Array.isArray(data.series)) ? data.series.length : 0, 'series');
+        case 'timeseries_data':
+            console.log('[RecipeManagement] Received timeseries data, storing in state:', data);
             recipeState.setTimeSeriesData(data);
             break;
             
         default:
-            console.warn('Unknown message type:', message.type);
+            console.warn('[RecipeManagement] Unknown message type:', message.type);
+            break;
     }
 }
 
 function routeUntypedMessage(message: any): void {
-    console.log('[RecipeManagement] routeUntypedMessage, analyzing structure:', Object.keys(message));
     
     if (message.recipeStatus && message.currentStepIndex !== undefined) {
-        console.log('[RecipeManagement] Detected as LiveViewDto');
         recipeState.setLiveView(message);
         // When LiveView is received, check if we need to load recipe details
         const currentRecipe = recipeState.getCurrentRecipe();
         if (message.recipeId) {
             if (!currentRecipe || currentRecipe.id !== message.recipeId) {
-                console.log('[RecipeManagement] LiveView received, looking for recipe:', message.recipeId);
                 // First try to find recipe in availableRecipes (browser state)
                 const availableRecipes = recipeState.getAvailableRecipes();
                 const foundRecipe = availableRecipes?.recipes?.find(r => r.id === message.recipeId);
                 
                 if (foundRecipe) {
-                    console.log('[RecipeManagement] Recipe found in availableRecipes, requesting full details');
                     // Found in list, but we need full RecipeDto with steps, so request it
                     if (globalSendFunction) {
                         globalSendFunction({ command: 'get_recipe', recipeId: message.recipeId });
                     }
                 } else {
-                    console.log('[RecipeManagement] Recipe not in availableRecipes, requesting from backend');
                     if (globalSendFunction) {
                         globalSendFunction({ command: 'get_recipe', recipeId: message.recipeId });
                     }
                 }
-            } else {
-                console.log('[RecipeManagement] Recipe already loaded for:', message.recipeId);
             }
         }
     } else if (message.recipes && Array.isArray(message.recipes)) {
-        console.log('[RecipeManagement] Detected as AvailableRecipesDto');
         recipeState.setAvailableRecipes(message);
     } else if (message.steps && Array.isArray(message.steps) && message.steps[0]?.typeId) {
-        console.log('[RecipeManagement] Detected as AvailableStepsDto with', message.steps.length, 'steps');
         recipeState.setAvailableSteps(message);
     } else if (message.id && message.name && message.steps && Array.isArray(message.steps)) {
-        console.log('[RecipeManagement] Detected as RecipeDto');
         recipeState.setCurrentRecipe(message);
     } else if (message.executions && Array.isArray(message.executions)) {
-        console.log('[RecipeManagement] Detected as ExecutionHistoryDto');
         recipeState.setExecutionHistory(message);
     } else if (message.executionId && message.series && Array.isArray(message.series)) {
-        console.log('[RecipeManagement] Detected as TimeSeriesDataDto');
         recipeState.setTimeSeriesData(message);
-    } else {
-        console.warn('[RecipeManagement] Could not infer message type from structure:', message);
     }
 }
 

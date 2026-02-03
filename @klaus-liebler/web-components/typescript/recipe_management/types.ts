@@ -1,6 +1,7 @@
 export interface CommandDto {
     command: string;
     recipeId?: string;
+    executionId?: string;  // For get_timeseries, delete_execution commands
     payload?: any;  // Can be object or string
     requestId?: string;
 }

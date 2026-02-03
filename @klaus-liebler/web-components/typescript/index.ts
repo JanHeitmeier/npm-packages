@@ -12,8 +12,7 @@ export * from "./controllers/RecipeEditorController"
 export * from "./controllers/AnalyticsController"
 export * from "./controllers/DashboardController"
 export * from "./controllers/CombinedSettingsController"
-export * from "./templates/menu_template"
-export * from "./templates/liveview_template"
+export * from "./templates/menu_template.ts"
 
 // Recipe Management Library (standalone, framework-independent)
 export * from "./recipe_management"

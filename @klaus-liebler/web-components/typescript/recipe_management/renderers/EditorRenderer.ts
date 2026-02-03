@@ -45,10 +45,7 @@ export class EditorRenderer implements ViewHandle {
 
     private requestAvailableSteps(): void {
         if (this.sendCommandFn) {
-            console.log('[EditorRenderer] Requesting available steps');
             this.sendCommandFn({ command: 'get_available_steps' });
-        } else {
-            console.warn('[EditorRenderer] sendCommandFn not configured yet');
         }
     }
 
@@ -74,25 +71,20 @@ export class EditorRenderer implements ViewHandle {
                     createdAt: recipe.createdAt,
                     lastModified: recipe.lastModified
                 };
-                console.log('[EditorRenderer] Recipe loaded from state:', this.currentRecipe.id);
-            } else {
-                console.log('[EditorRenderer] Ignoring state change - different recipe ID (current:', this.currentRecipe.id, 'state:', recipe.id, ')');
+
             }
         }
         
         const availableSteps = recipeState.getAvailableSteps();
         if (availableSteps && availableSteps.steps) {
-            console.log('[EditorRenderer] Available steps received from backend:', availableSteps.steps.length);
             this.backendStepsLoaded = true;
             
             // Replace localStorage with backend data (even if empty)
             try {
                 if (availableSteps.steps.length > 0) {
                     localStorage.setItem('recipe_available_steps', JSON.stringify(availableSteps));
-                    console.log('[EditorRenderer] Steps replaced in localStorage');
                 } else {
                     localStorage.removeItem('recipe_available_steps');
-                    console.log('[EditorRenderer] No steps from backend - localStorage cleared');
                 }
             } catch (error) {
                 console.error('[EditorRenderer] Error updating localStorage:', error);
@@ -101,17 +93,14 @@ export class EditorRenderer implements ViewHandle {
         
         const availableRecipes = recipeState.getAvailableRecipes();
         if (availableRecipes && availableRecipes.recipes) {
-            console.log('[EditorRenderer] Available recipes received from backend:', availableRecipes.recipes.length);
             this.backendRecipesLoaded = true;
             
             // Replace localStorage with backend data (even if empty)
             try {
                 if (availableRecipes.recipes.length > 0) {
                     localStorage.setItem('recipe_available_recipes', JSON.stringify(availableRecipes));
-                    console.log('[EditorRenderer] Recipes replaced in localStorage');
                 } else {
                     localStorage.removeItem('recipe_available_recipes');
-                    console.log('[EditorRenderer] No recipes from backend - localStorage cleared');
                 }
             } catch (error) {
                 console.error('[EditorRenderer] Error updating localStorage:', error);
@@ -139,10 +128,8 @@ export class EditorRenderer implements ViewHandle {
             const existingIndex = recipes.recipes.findIndex((r: any) => r.id === recipe.id);
             if (existingIndex >= 0) {
                 recipes.recipes[existingIndex] = recipeInfo;
-                console.log('[EditorRenderer] Updated recipe in localStorage:', recipe.id);
             } else {
                 recipes.recipes.push(recipeInfo);
-                console.log('[EditorRenderer] Added recipe to localStorage:', recipe.id);
             }
             
             localStorage.setItem('recipe_available_recipes', JSON.stringify(recipes));
@@ -162,18 +149,14 @@ export class EditorRenderer implements ViewHandle {
             recipes.recipes = recipes.recipes.filter((r: any) => r.id !== recipeId);
             
             localStorage.setItem('recipe_available_recipes', JSON.stringify(recipes));
-            console.log('[EditorRenderer] Deleted recipe from localStorage:', recipeId);
         } catch (error) {
             console.error('[EditorRenderer] Error deleting recipe from localStorage:', error);
         }
     }
 
     private loadRecipeList(): void {
-        console.log('[EditorRenderer] Loading recipe list from backend (machine)...');
-        
         // Always request from backend first (at least once)
         if (!this.backendRecipesLoaded) {
-            console.log('[EditorRenderer] Requesting recipes from backend');
             this.requestRecipeList();
             return;
         }
@@ -181,7 +164,6 @@ export class EditorRenderer implements ViewHandle {
         // After backend has been loaded once, check state first
         const availableRecipes = recipeState.getAvailableRecipes();
         if (availableRecipes && availableRecipes.recipes && availableRecipes.recipes.length > 0) {
-            console.log('[EditorRenderer] Recipes already in state:', availableRecipes.recipes.length);
             return;
         }
         
@@ -189,7 +171,6 @@ export class EditorRenderer implements ViewHandle {
         try {
             const cachedRecipes = localStorage.getItem('recipe_available_recipes');
             if (cachedRecipes) {
-                console.log('[EditorRenderer] Loading recipes from localStorage as fallback');
                 const parsedRecipes = JSON.parse(cachedRecipes);
                 recipeState.setAvailableRecipes(parsedRecipes);
                 return;
@@ -200,7 +181,6 @@ export class EditorRenderer implements ViewHandle {
         
         // Request from backend again
         // No cached recipes - request from backend
-        console.log('[EditorRenderer] Requesting recipes from backend');
         this.requestRecipeList();
     }
 
@@ -408,7 +388,6 @@ export class EditorRenderer implements ViewHandle {
 
     private openRecipeLoader(): void {
         this.isRecipeLoaderOpen = true;
-        console.log('[EditorRenderer] Opening recipe loader');
         this.render();
     }
 
@@ -419,11 +398,9 @@ export class EditorRenderer implements ViewHandle {
 
     private loadRecipe(recipeId: string): void {
         if (!this.sendCommandFn) {
-            console.error('[EditorRenderer] Send function not configured');
             return;
         }
 
-        console.log('[EditorRenderer] Loading recipe:', recipeId);
         this.sendCommandFn({
             command: 'get_recipe',
             recipeId: recipeId,
@@ -436,11 +413,8 @@ export class EditorRenderer implements ViewHandle {
     }
 
     private openStepSelector(): void {
-        console.log('[EditorRenderer] Opening step selector');
-        
         // Always request from backend first (at least once)
         if (!this.backendStepsLoaded) {
-            console.log('[EditorRenderer] Requesting steps from backend (machine)');
             this.requestAvailableSteps();
             this.isStepSelectorOpen = true;
             this.render();
@@ -450,7 +424,6 @@ export class EditorRenderer implements ViewHandle {
         // After backend has been loaded once, check state first
         const availableSteps = recipeState.getAvailableSteps();
         if (availableSteps && availableSteps.steps && availableSteps.steps.length > 0) {
-            console.log('[EditorRenderer] Steps already in state:', availableSteps.steps.length);
             this.isStepSelectorOpen = true;
             this.render();
             return;
@@ -460,7 +433,6 @@ export class EditorRenderer implements ViewHandle {
         try {
             const cachedSteps = localStorage.getItem('recipe_available_steps');
             if (cachedSteps) {
-                console.log('[EditorRenderer] Loading steps from localStorage as fallback');
                 const parsedSteps = JSON.parse(cachedSteps);
                 recipeState.setAvailableSteps(parsedSteps);
                 this.isStepSelectorOpen = true;
@@ -472,7 +444,6 @@ export class EditorRenderer implements ViewHandle {
         }
         
         // Request from backend again
-        console.log('[EditorRenderer] Requesting steps from backend');
         this.requestAvailableSteps();
         this.isStepSelectorOpen = true;
         this.render();
@@ -498,7 +469,6 @@ export class EditorRenderer implements ViewHandle {
 
     private saveRecipe(): void {
         if (!this.sendCommandFn) {
-            console.error('[EditorRenderer] Send function not configured');
             return;
         }
 
@@ -550,7 +520,6 @@ export class EditorRenderer implements ViewHandle {
                 const existingRecipe = availableRecipes.recipes.find(r => r.id === this.currentRecipe.id);
                 if (existingRecipe && existingRecipe.version !== this.currentRecipe.version) {
                     // Version changed - create new file with new ID
-                    console.log('[EditorRenderer] Version changed, creating new recipe file');
                     this.currentRecipe.id = '';  // Clear ID to force new file creation
                 }
             }
@@ -575,8 +544,6 @@ export class EditorRenderer implements ViewHandle {
         
         // Always update lastModified timestamp when saving
         this.currentRecipe.lastModified = currentTime;
-
-        console.log('[EditorRenderer] Saving recipe:', this.currentRecipe);
 
         // Send recipe object directly in payload, not as JSON string
         this.sendCommandFn({
@@ -610,7 +577,6 @@ export class EditorRenderer implements ViewHandle {
             order: this.currentRecipe.steps.length,
         };
         
-        console.log('[EditorRenderer] Adding step with aliases from backend:', aliases);
         this.currentRecipe.steps.push(newStep);
         this.render();
     }
@@ -642,7 +608,6 @@ export class EditorRenderer implements ViewHandle {
 
     private deleteRecipe(): void {
         if (!this.sendCommandFn) {
-            console.error('[EditorRenderer] Send function not configured');
             return;
         }
 
@@ -654,8 +619,6 @@ export class EditorRenderer implements ViewHandle {
         if (!confirm(`Möchtest du das Rezept "${this.currentRecipe.name}" wirklich löschen?`)) {
             return;
         }
-
-        console.log('[EditorRenderer] Deleting recipe:', this.currentRecipe.id);
         const recipeIdToDelete = Number(this.currentRecipe.id);
         this.sendCommandFn({
             command: 'delete_recipe',
@@ -703,24 +666,16 @@ export class EditorRenderer implements ViewHandle {
                         lastModified: recipe.lastModified  // Preserve last modified timestamp if available
                     };
                     
-                    console.log('[EditorRenderer] Recipe imported with', this.currentRecipe.steps.length, 'steps');
-                    console.log('[EditorRenderer] Steps data:', JSON.stringify(this.currentRecipe.steps, null, 2));
-                    
                     // Ensure availableSteps are loaded
                     const availableSteps = recipeState.getAvailableSteps();
                     if (!availableSteps || !availableSteps.steps || availableSteps.steps.length === 0) {
-                        console.warn('[EditorRenderer] availableSteps not loaded, requesting from backend');
                         if (this.sendCommandFn) {
                             this.sendCommandFn({ command: 'get_available_steps' });
                         }
-                    } else {
-                        console.log('[EditorRenderer] availableSteps loaded:', availableSteps.steps.length, 'steps');
                     }
                     
                     this.selectedStepIndex = -1;
                     this.render();
-                    
-                    console.log('[EditorRenderer] Recipe imported:', recipe.name);
                     alert(`Rezept "${recipe.name}" importiert. Bitte speichern, um es auf der Maschine zu speichern.`);
                 } catch (error) {
                     console.error('[EditorRenderer] Error importing recipe:', error);
@@ -765,8 +720,6 @@ export class EditorRenderer implements ViewHandle {
         
         // Cleanup
         URL.revokeObjectURL(url);
-        
-        console.log('[EditorRenderer] Recipe exported:', this.currentRecipe.name);
     }
 
     destroy(): void {

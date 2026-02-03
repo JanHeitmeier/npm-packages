@@ -29,15 +29,28 @@ export class AnalyticsRenderer implements ViewHandle {
     }
 
     setSendFunction(sendFn: (cmd: any) => void): void {
-        console.log('[ANALYTICS] setSendFunction called');
         this.sendCommandFn = sendFn;
-        console.log('[ANALYTICS] Requesting execution history from setSendFunction');
         this.sendCommandFn({ command: 'get_execution_history' });
     }
 
     setContainer(container: HTMLElement): void {
         this.container = container;
         this.container.classList.add('recipe-mgmt-analytics');
+        
+        // Check if there's a pre-selected execution from navigation
+        const preSelectedExecutionId = recipeState.getSelectedExecutionId();
+        if (preSelectedExecutionId && this.sendCommandFn) {
+            console.log('[ANALYTICS] Pre-selected executionId from state:', preSelectedExecutionId);
+            const history = recipeState.getExecutionHistory();
+            if (history && history.executions) {
+                const execution = history.executions.find(e => e.executionId === preSelectedExecutionId);
+                if (execution) {
+                    console.log('[ANALYTICS] Found execution, loading time series');
+                    this.selectedExecution = execution;
+                    this.sendCommandFn({ command: 'get_timeseries', executionId: preSelectedExecutionId });
+                }
+            }
+        }
     }
 
     private getSortedExecutions(): RecipeExecutionDto[] {
@@ -115,12 +128,10 @@ export class AnalyticsRenderer implements ViewHandle {
     }
 
     private handleSelectExecution(execution: RecipeExecutionDto): void {
-        console.log('[ANALYTICS] Execution selected:', execution);
         this.selectedExecution = execution;
         this.selectedSensor = null;
         this.timeSeriesData = null;
         
-        console.log('[ANALYTICS] Requesting time series for executionId:', execution.executionId);
         if (this.sendCommandFn) {
             this.sendCommandFn({
                 command: 'get_timeseries',
@@ -136,7 +147,7 @@ export class AnalyticsRenderer implements ViewHandle {
             if (this.sendCommandFn) {
                 this.sendCommandFn({
                     command: 'delete_execution',
-                    recipeId: executionId
+                    executionId: executionId
                 });
             }
             if (this.selectedExecution?.executionId === executionId) {
@@ -150,6 +161,17 @@ export class AnalyticsRenderer implements ViewHandle {
     private handleSelectSensor(sensorName: string): void {
         this.selectedSensor = sensorName;
         this.render();
+    }
+
+    private handleExportExecution(executionId: string): void {
+        // Placeholder für Export-Funktionalität
+        console.log('[ANALYTICS] Export execution:', executionId);
+        alert('Export-Funktionalität wird später implementiert.\nExecution ID: ' + executionId);
+        
+        // TODO: Implementierung folgt später
+        // - CSV Export der Sensor-Daten
+        // - JSON Export der gesamten Execution
+        // - PDF Report Generation
     }
 
     private drawChart(canvas: HTMLCanvasElement, sensor: SensorTimeSeriesDto): void {
@@ -246,126 +268,114 @@ export class AnalyticsRenderer implements ViewHandle {
         }
         
         this.container.innerHTML = `
-            <div class="analytics-container">
-                <h1>Ausführungshistorie & Analytics</h1>
-                
-                <div class="analytics-view">
-                    <h2>Rezept-Ausführungen</h2>
+            <div class="analytics-layout">
+                <!-- Left: Execution List (30%) -->
+                <div class="execution-list-panel">
+                    <h2>Ausführungen</h2>
                     
-                    <div class="analytics-filters">
-                        <div class="filter-group">
-                            <label>Sortierung</label>
-                            <select id="sort-field">
-                                <option value="date" ${this.sortField === 'date' ? 'selected' : ''}>Datum</option>
-                                <option value="recipe" ${this.sortField === 'recipe' ? 'selected' : ''}>Rezept</option>
-                                <option value="status" ${this.sortField === 'status' ? 'selected' : ''}>Status</option>
-                                <option value="duration" ${this.sortField === 'duration' ? 'selected' : ''}>Dauer</option>
-                            </select>
-                        </div>
-                        <div class="filter-group">
-                            <label>Richtung</label>
-                            <select id="sort-direction">
-                                <option value="desc" ${this.sortDirection === 'desc' ? 'selected' : ''}>Absteigend</option>
-                                <option value="asc" ${this.sortDirection === 'asc' ? 'selected' : ''}>Aufsteigend</option>
-                            </select>
-                        </div>
+                    <div class="sort-controls">
+                        <select id="sort-field">
+                            <option value="date" ${this.sortField === 'date' ? 'selected' : ''}>Datum</option>
+                            <option value="recipe" ${this.sortField === 'recipe' ? 'selected' : ''}>Rezept</option>
+                        </select>
+                        <select id="sort-direction">
+                            <option value="desc" ${this.sortDirection === 'desc' ? 'selected' : ''}>↓</option>
+                            <option value="asc" ${this.sortDirection === 'asc' ? 'selected' : ''}>↑</option>
+                        </select>
                     </div>
                     
-                    ${executions.length === 0 ? `
-                        <div style="padding: 40px; text-align: center; color: var(--text-light);">
-                            Keine Ausführungen gefunden
-                        </div>
-                    ` : `
-                        <table class="data-table">
-                            <thead>
-                                <tr>
-                                    <th>Datum</th>
-                                    <th>Rezept</th>
-                                    <th>Status</th>
-                                    <th>Dauer</th>
-                                    <th>Aktionen</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                ${executions.map(exec => `
-                                    <tr class="${this.selectedExecution?.executionId === exec.executionId ? 'selected-row' : ''}"
-                                        style="cursor: pointer;"
-                                        data-exec-id="${exec.executionId}">
-                                        <td>${this.formatTimestamp(exec.startTime)}</td>
-                                        <td>${exec.recipeName}</td>
-                                        <td>
-                                            <span style="color: ${this.getStatusColor(exec.status)}; font-weight: 600;">
-                                                ${exec.status}
-                                            </span>
-                                        </td>
-                                        <td>${this.formatDuration(exec.duration)}</td>
-                                        <td>
-                                            <button class="btn-view" data-exec-id="${exec.executionId}">Anzeigen</button>
-                                            <button class="btn-delete" data-exec-id="${exec.executionId}">Löschen</button>
-                                        </td>
-                                    </tr>
-                                `).join('')}
-                            </tbody>
-                        </table>
-                    `}
+                    <div class="execution-list">
+                        ${executions.length === 0 ? `
+                            <div class="empty-state">Keine Ausführungen</div>
+                        ` : executions.map(exec => {
+                            const statusIcon = exec.status === 'completed' ? '✓' : exec.status === 'error' ? '✗' : '●';
+                            const statusColor = this.getStatusColor(exec.status);
+                            const isSelected = this.selectedExecution?.executionId === exec.executionId;
+                            
+                            return `
+                                <div class="execution-item ${isSelected ? 'selected' : ''}" data-exec-id="${exec.executionId}">
+                                    <div class="execution-header">
+                                        <span class="status-icon" style="color: ${statusColor}">${statusIcon}</span>
+                                        <span class="recipe-name">${exec.recipeName || 'Unbenannt'}</span>
+                                    </div>
+                                    <div class="execution-time">${this.formatTimestamp(exec.startTime)}</div>
+                                    <div class="execution-duration">${this.formatDuration(exec.duration)}</div>
+                                    <div class="execution-actions">
+                                        <button class="btn-view-small" data-exec-id="${exec.executionId}">Anzeigen</button>
+                                        <button class="btn-delete-small" data-exec-id="${exec.executionId}">×</button>
+                                    </div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
                 </div>
                 
-                ${this.selectedExecution ? `
-                    <div class="analytics-view" style="margin-top: 20px;">
-                        <h2>Details: ${this.selectedExecution.recipeName}</h2>
-                        
-                        <div class="analytics-grid">
-                            <div class="analytics-card">
-                                <h3>Ausführungs-ID</h3>
-                                <div class="analytics-value" style="font-size: 1rem;">${this.selectedExecution.executionId}</div>
+                <!-- Right: Details Panel (70%) -->
+                <div class="details-panel">
+                    ${this.selectedExecution ? `
+                        <div class="details-content">
+                            <h2>${this.selectedExecution.recipeName || 'Unbenanntes Rezept'}</h2>
+                            
+                            <div class="details-grid">
+                                <div class="detail-item">
+                                    <span class="detail-label">Execution-ID</span>
+                                    <span class="detail-value">${this.selectedExecution.executionId}</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="detail-label">Startzeit</span>
+                                    <span class="detail-value">${this.formatTimestamp(this.selectedExecution.startTime)}</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="detail-label">Dauer</span>
+                                    <span class="detail-value">${this.formatDuration(this.selectedExecution.duration)}</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="detail-label">Status</span>
+                                    <span class="detail-value" style="color: ${this.getStatusColor(this.selectedExecution.status)}">${this.selectedExecution.status}</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="detail-label">Aktionen</span>
+                                    <div>
+                                        <button class="btn-export" data-exec-id="${this.selectedExecution.executionId}">Exportieren</button>
+                                        <button class="btn-delete-execution" data-exec-id="${this.selectedExecution.executionId}">Löschen</button>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="analytics-card">
-                                <h3>Startzeit</h3>
-                                <div class="analytics-value" style="font-size: 1.2rem;">${this.formatTimestamp(this.selectedExecution.startTime)}</div>
-                            </div>
-                            <div class="analytics-card">
-                                <h3>Endzeit</h3>
-                                <div class="analytics-value" style="font-size: 1.2rem;">${this.formatTimestamp(this.selectedExecution.endTime)}</div>
-                            </div>
-                            <div class="analytics-card">
-                                <h3>Gesamtdauer</h3>
-                                <div class="analytics-value">${this.formatDuration(this.selectedExecution.duration)}</div>
-                            </div>
+                            
+                            ${this.timeSeriesData && this.timeSeriesData.series.length > 0 ? `
+                                <div class="sensor-section">
+                                    <h3>Sensor-Daten</h3>
+                                    
+                                    ${this.timeSeriesData.series.length > 1 ? `
+                                        <div class="sensor-tabs">
+                                            ${this.timeSeriesData.series.map(sensor => `
+                                                <button class="sensor-tab ${this.selectedSensor === sensor.sensorName ? 'active' : ''}"
+                                                        data-sensor="${sensor.sensorName}">
+                                                    ${sensor.sensorName}
+                                                </button>
+                                            `).join('')}
+                                        </div>
+                                    ` : `
+                                        <div class="single-sensor-title">${this.timeSeriesData.series[0].sensorName} (${this.timeSeriesData.series[0].unit})</div>
+                                    `}
+                                    
+                                    <div class="chart-container">
+                                        <canvas id="chart-canvas" width="800" height="400"></canvas>
+                                    </div>
+                                </div>
+                            ` : `
+                                <div class="no-data">
+                                    ${this.timeSeriesData ? 'Keine Sensor-Daten verfügbar' : 'Lade Daten...'}
+                                </div>
+                            `}
                         </div>
-                        
-                        ${this.timeSeriesData && this.timeSeriesData.series.length > 0 ? `
-                            <h3 style="margin-top: 30px; color: var(--blue-base);">Sensor-Daten</h3>
-                            
-                            ${this.timeSeriesData.series.length > 1 ? `
-                                <div class="sensor-tabs" style="display: flex; gap: 10px; margin: 15px 0; flex-wrap: wrap;">
-                                    ${this.timeSeriesData.series.map(sensor => `
-                                        <button class="sensor-tab ${this.selectedSensor === sensor.sensorName ? 'active' : ''}"
-                                                data-sensor="${sensor.sensorName}"
-                                                style="padding: 8px 16px; 
-                                                       border: 2px solid var(--blue-base);
-                                                       background: ${this.selectedSensor === sensor.sensorName ? 'var(--blue-base)' : 'white'};
-                                                       color: ${this.selectedSensor === sensor.sensorName ? 'white' : 'var(--blue-base)'};
-                                                       border-radius: 4px;
-                                                       cursor: pointer;
-                                                       font-weight: 600;">
-                                            ${sensor.sensorName}
-                                        </button>
-                                    `).join('')}
-                                </div>
-                            ` : ''}
-                            
-                            ${this.selectedSensor ? `
-                                <div class="chart-container">
-                                    <canvas id="chart-canvas" width="800" height="400"></canvas>
-                                </div>
-                            ` : ''}
-                        ` : `
-                            <div style="padding: 20px; text-align: center; color: var(--text-light); margin-top: 20px;">
-                                ${this.timeSeriesData ? 'Keine Sensor-Daten verfügbar' : 'Lade Daten...'}
-                            </div>
-                        `}
-                    </div>
-                ` : ''}
+                    ` : `
+                        <div class="empty-selection">
+                            <p>Keine Execution ausgewählt</p>
+                            <p class="hint">Wählen Sie eine Execution aus der Liste, um Details anzuzeigen</p>
+                        </div>
+                    `}
+                </div>
             </div>
         `;
         
@@ -390,7 +400,20 @@ export class AnalyticsRenderer implements ViewHandle {
             });
         }
         
-        this.container.querySelectorAll('.btn-view').forEach(btn => {
+        // Execution item click (entire row)
+        this.container.querySelectorAll('.execution-item').forEach(item => {
+            item.addEventListener('click', (e) => {
+                // Ignore if clicking on buttons
+                if ((e.target as HTMLElement).closest('button')) return;
+                
+                const execId = (item as HTMLElement).dataset.execId;
+                const exec = this.getSortedExecutions().find(e => e.executionId === execId);
+                if (exec) this.handleSelectExecution(exec);
+            });
+        });
+        
+        // View buttons
+        this.container.querySelectorAll('.btn-view-small').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
                 const execId = (btn as HTMLElement).dataset.execId;
@@ -399,7 +422,8 @@ export class AnalyticsRenderer implements ViewHandle {
             });
         });
         
-        this.container.querySelectorAll('.btn-delete').forEach(btn => {
+        // Delete buttons
+        this.container.querySelectorAll('.btn-delete-small').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
                 const execId = (btn as HTMLElement).dataset.execId;
@@ -407,10 +431,27 @@ export class AnalyticsRenderer implements ViewHandle {
             });
         });
         
+        // Sensor tabs
         this.container.querySelectorAll('.sensor-tab').forEach(btn => {
             btn.addEventListener('click', () => {
                 const sensorName = (btn as HTMLElement).dataset.sensor;
                 if (sensorName) this.handleSelectSensor(sensorName);
+            });
+        });
+        
+        // Export button
+        this.container.querySelectorAll('.btn-export').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const execId = (btn as HTMLElement).dataset.execId;
+                if (execId) this.handleExportExecution(execId);
+            });
+        });
+        
+        // Delete execution button (in details)
+        this.container.querySelectorAll('.btn-delete-execution').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const execId = (btn as HTMLElement).dataset.execId;
+                if (execId) this.handleDeleteExecution(execId);
             });
         });
     }

@@ -17,8 +17,9 @@ export class DashboardRenderer implements ViewHandle {
         this.container.classList.add('recipe-mgmt-dashboard');
         this.unsubscribe = recipeState.subscribe(() => this.onStateChange());
         
-        // Request recipe list immediately on construction
+        // Request recipe list and execution history immediately on construction
         this.requestRecipeList();
+        this.requestExecutionHistory();
     }
 
     setSendFunction(sendFn: (cmd: any) => void): void {
@@ -32,6 +33,9 @@ export class DashboardRenderer implements ViewHandle {
     setContainer(container: HTMLElement): void {
         this.container = container;
         this.container.classList.add('recipe-mgmt-dashboard');
+        // Reload data when container is set (e.g., when switching back to dashboard)
+        this.requestRecipeList();
+        this.requestExecutionHistory();
     }
 
     private deleteRecipeFromLocalStorage(recipeId: number): void {
@@ -110,10 +114,15 @@ export class DashboardRenderer implements ViewHandle {
 
     private requestRecipeList(): void {
         if (this.sendCommandFn) {
-            console.log('[DashboardRenderer] Sending get_recipe_list command');
+            console.log('[DashboardRenderer] Requesting recipe list from backend');
             this.sendCommandFn({ command: 'get_recipe_list' });
-        } else {
-            console.warn('[DashboardRenderer] sendCommandFn not configured yet');
+        }
+    }
+
+    private requestExecutionHistory(): void {
+        if (this.sendCommandFn) {
+            console.log('[DashboardRenderer] Requesting execution history from backend');
+            this.sendCommandFn({ command: 'get_execution_history' });
         }
     }
 
@@ -147,7 +156,7 @@ export class DashboardRenderer implements ViewHandle {
 
                 <div class="recipe-history dashboard-field">
                     <h2>Recent Recipes</h2>
-                    <p>No history available</p>
+                    ${this.renderExecutionHistory()}
                 </div>
             </div>
             
@@ -210,14 +219,54 @@ export class DashboardRenderer implements ViewHandle {
         `;
     }
 
+    private renderExecutionHistory(): string {
+        const history = recipeState.getExecutionHistory();
+        
+        if (!history || !history.executions || history.executions.length === 0) {
+            return '<p>No execution history available</p>';
+        }
+
+        const recentExecutions = history.executions.slice(0, 5);
+        
+        return `
+            <ul style="list-style: none; padding: 0; margin: 0;">
+                ${recentExecutions.map(exec => {
+                    const date = new Date(exec.startTime);
+                    const dateStr = date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+                    const durationSec = Math.round(exec.duration / 1000);
+                    const statusIcon = exec.status === 'completed' ? '✓' : exec.status === 'error' ? '✗' : '●';
+                    const statusColor = exec.status === 'completed' ? '#4CAF50' : exec.status === 'error' ? '#f44336' : '#ff9800';
+                    
+                    return `
+                        <li style="padding: 8px 0; border-bottom: 1px solid #eee; cursor: pointer;" 
+                            data-action="view-execution" 
+                            data-execution-id="${escapeHtml(exec.executionId)}">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <div>
+                                    <span style="color: ${statusColor}; font-weight: bold;">${statusIcon}</span>
+                                    <strong>${escapeHtml(exec.recipeName)}</strong>
+                                    <div style="font-size: 0.85em; color: #666;">
+                                        ${dateStr} • ${durationSec}s
+                                    </div>
+                                </div>
+                                <span style="font-size: 0.85em; color: #666;">${escapeHtml(exec.status)}</span>
+                            </div>
+                        </li>
+                    `;
+                }).join('')}
+            </ul>
+        `;
+    }
+
     private attachEventListeners(): void {
         const buttons = this.container.querySelectorAll('[data-action]');
         console.log('[DashboardRenderer] Attaching event listeners to', buttons.length, 'buttons');
         buttons.forEach(btn => {
             const action = (btn as HTMLElement).dataset.action;
             const recipeId = (btn as HTMLElement).dataset.recipeId;
+            const executionId = (btn as HTMLElement).dataset.executionId;
             console.log('[DashboardRenderer] Attaching listener for action:', action);
-            btn.addEventListener('click', () => this.handleAction(action!, recipeId));
+            btn.addEventListener('click', () => this.handleAction(action!, recipeId || executionId));
         });
     }
 
@@ -281,11 +330,22 @@ export class DashboardRenderer implements ViewHandle {
                 if (recipeId && confirm(`Rezept "${recipeId}" wirklich löschen?`)) {
                     this.sendCommandFn({ command: 'delete_recipe', recipeId });
                     // Remove from localStorage immediately
-                    this.deleteRecipeFromLocalStorage(recipeId);
+                    this.deleteRecipeFromLocalStorage(Number(recipeId));
                 }
                 break;
             case 'refresh':
                 this.requestRecipeList();
+                this.requestExecutionHistory();
+                break;
+            case 'view-execution':
+                console.log('[DashboardRenderer] View execution:', recipeId);
+                if (recipeId && this.navigateFn) {
+                    // Store execution ID in state for analytics view
+                    console.log('[DashboardRenderer] Setting selectedExecutionId:', recipeId);
+                    recipeState.setSelectedExecutionId(recipeId);
+                    this.sendCommandFn({ command: 'get_timeseries', executionId: recipeId });
+                    this.navigateFn('analytics');
+                }
                 break;
         }
     }

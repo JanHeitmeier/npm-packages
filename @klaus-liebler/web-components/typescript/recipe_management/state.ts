@@ -16,6 +16,7 @@ export class RecipeState {
     private currentRecipe: RecipeDto | null = null;
     private executionHistory: ExecutionHistoryDto | null = null;
     private timeSeriesData: TimeSeriesDataDto | null = null;
+    private selectedExecutionId: string | null = null;
     
     private listeners: Set<StateChangeListener> = new Set();
 
@@ -43,6 +44,10 @@ export class RecipeState {
         return this.timeSeriesData;
     }
 
+    getSelectedExecutionId(): string | null {
+        return this.selectedExecutionId;
+    }
+
     getState() {
         return {
             liveView: this.liveView,
@@ -60,35 +65,32 @@ export class RecipeState {
     }
 
     setAvailableRecipes(data: AvailableRecipesDto): void {
-        console.log('[RecipeState] setAvailableRecipes called with', data.recipes?.length || 0, 'recipes');
         this.availableRecipes = data;
         this.notifyListeners();
-        console.log('[RecipeState] Listeners notified');
     }
 
     setAvailableSteps(data: AvailableStepsDto): void {
-        console.log('[RecipeState] setAvailableSteps called with', data.steps?.length || 0, 'steps');
         this.availableSteps = data;
         this.notifyListeners();
-        console.log('[RecipeState] Listeners notified');
     }
 
     setCurrentRecipe(data: RecipeDto): void {
-        console.log('[RecipeState] setCurrentRecipe called:', data.name || data.id || 'Unknown');
         this.currentRecipe = data;
         this.notifyListeners();
-        console.log('[RecipeState] Listeners notified');
     }
 
     setExecutionHistory(data: ExecutionHistoryDto): void {
-        console.log('[RecipeState] setExecutionHistory called with', data.executions?.length || 0, 'executions');
         this.executionHistory = data;
         this.notifyListeners();
     }
 
     setTimeSeriesData(data: TimeSeriesDataDto): void {
-        console.log('[RecipeState] setTimeSeriesData called for execution', data.executionId);
         this.timeSeriesData = data;
+        this.notifyListeners();
+    }
+
+    setSelectedExecutionId(executionId: string | null): void {
+        this.selectedExecutionId = executionId;
         this.notifyListeners();
     }
 
