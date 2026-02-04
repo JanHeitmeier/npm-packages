@@ -239,17 +239,17 @@ export class AppController implements IAppManagement, IScreenControllerHost {
             const wrapper = ResponseWrapper.getRootAsResponseWrapper(bb);
             const responseType = wrapper.responseType();
             
-            console.log(`[AppController] Response type: ${responseType}`);
-            
             if (responseType === 1) { // ResponseJson is type 1
               const response = wrapper.response(new ResponseJson());
               if (response && response.payload()) {
                 const jsonStr = response.payload()!.json();
                 if (jsonStr) {
-                  console.log(`[AppController] Received JSON (${jsonStr.length} chars):`, jsonStr.substring(0, 200));
                   try {
                     const jsonObj = JSON.parse(jsonStr);
-                    console.log(`[AppController] Parsed JSON successfully, calling handler with:`, jsonObj);
+                    // Only log non-liveview messages to reduce noise during polling
+                    if (jsonObj.type !== 'liveview') {
+                      console.log(`[AppController] Recipe Management:`, jsonObj.type || jsonObj.command);
+                    }
                     handler(jsonObj); // Call receiveMessage
                   } catch (e) {
                     console.error("Failed to parse Recipe Management JSON:", e);

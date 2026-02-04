@@ -2,6 +2,7 @@ import { recipeState } from '../state';
 import * as Templates from './EditorTemplates';
 import type { RecipeDto, StepConfigDto } from '../types';
 import type { ViewHandle } from './LiveViewRenderer';
+import { escapeHtml } from '../utils';
 
 export class EditorRenderer implements ViewHandle {
     private container: HTMLElement;
@@ -204,11 +205,81 @@ export class EditorRenderer implements ViewHandle {
             this.isRecipeLoaderOpen,
             availableSteps,
             availableRecipes,
+            this.renderGlobalParameters(),
             this.renderStepParameters(),
             (typeId) => this.getStepDisplayName(typeId)
         );
 
         this.attachEventListeners();
+    }
+
+    private renderGlobalParameters(): string {
+        // Sammle alle globalen Parameter aus allen Schritten im Rezept
+        const globalParams = new Map<string, any>();
+        const availableSteps = recipeState.getAvailableSteps();
+        
+        for (const step of this.currentRecipe.steps) {
+            const stepMeta = availableSteps?.steps?.find((s: any) => s.typeId === step.stepTypeId);
+            if (stepMeta && stepMeta.parameters) {
+                for (const param of stepMeta.parameters) {
+                    if (param.isGlobal && !globalParams.has(param.name)) {
+                        globalParams.set(param.name, {
+                            ...param,
+                            value: step.parameters[param.name] || param.defaultValue
+                        });
+                    }
+                }
+            }
+        }
+
+        if (globalParams.size === 0) {
+            return '';
+        }
+
+        return `
+            <div class="global-parameters-section">
+                <h3>GLOBAL Recipe Parameters</h3>
+                <div class="global-parameters-grid">
+                    ${Array.from(globalParams.values()).map(param => {
+                        let inputType = 'text';
+                        let inputValue = param.value;
+                        
+                        if (param.type === 'bool') {
+                            inputType = 'checkbox';
+                        } else if (param.type === 'int') {
+                            inputType = 'number';
+                        } else if (param.type === 'float') {
+                            inputType = 'number';
+                        }
+                        // Color stays as text type, no special handling
+                        
+                        return `
+                        <div class="parameter-item-wide">
+                            <div class="parameter-label-section">
+                                <label>
+                                    ${escapeHtml(param.label || param.name)}
+                                    <span class="info-icon" title="${escapeHtml(param.description)}${param.unit ? '\\n\\nUnit: ' + param.unit : ''}">ℹ️</span>
+                                </label>
+                            </div>
+                            <div class="parameter-input-section">
+                                <div class="parameter-input-group">
+                                    <input 
+                                        type="${inputType}" 
+                                        value="${escapeHtml(inputValue)}"
+                                        data-global-param-key="${escapeHtml(param.name)}"
+                                        placeholder="${escapeHtml(param.defaultValue)}"
+                                        ${param.type === 'int' ? 'step="1"' : param.type === 'float' ? 'step="0.01"' : ''}
+                                        ${param.minValue ? `min="${escapeHtml(param.minValue)}"` : ''}
+                                        ${param.maxValue ? `max="${escapeHtml(param.maxValue)}"` : ''}>
+                                    ${param.unit ? `<span class="parameter-unit">${escapeHtml(param.unit)}</span>` : ''}
+                                </div>
+                            </div>
+                        </div>
+                        `;
+                    }).join('')}
+                </div>
+            </div>
+        `;
     }
 
     private renderStepParameters(): string {
@@ -267,8 +338,41 @@ export class EditorRenderer implements ViewHandle {
             input.addEventListener('input', (e) => {
                 const target = e.target as HTMLInputElement;
                 const key = target.dataset.paramKey!;
+                const value = target.value;
+                
                 if (this.selectedStepIndex >= 0 && this.selectedStepIndex < this.currentRecipe.steps.length) {
-                    this.currentRecipe.steps[this.selectedStepIndex].parameters[key] = target.value;
+                    this.currentRecipe.steps[this.selectedStepIndex].parameters[key] = value;
+                }
+            });
+        });
+
+        // Global parameter changes - propagate to all steps that reference them
+        const globalParamInputs = this.container.querySelectorAll('[data-global-param-key]');
+        globalParamInputs.forEach(input => {
+            input.addEventListener('input', (e) => {
+                const target = e.target as HTMLInputElement;
+                const key = target.dataset.globalParamKey!;
+                const value = target.value;
+                
+                // Update all steps that have this global parameter
+                const availableSteps = recipeState.getAvailableSteps();
+                for (let i = 0; i < this.currentRecipe.steps.length; i++) {
+                    const step = this.currentRecipe.steps[i];
+                    const stepMeta = availableSteps?.steps?.find((s: any) => s.typeId === step.stepTypeId);
+                    if (stepMeta && stepMeta.parameters) {
+                        const globalParam = stepMeta.parameters.find((p: any) => p.name === key && p.isGlobal);
+                        if (globalParam) {
+                            step.parameters[key] = value;
+                        }
+                    }
+                }
+                
+                // If currently selected step has this parameter, update display
+                if (this.selectedStepIndex >= 0) {
+                    const selectedParamInput = this.container.querySelector(`[data-param-key="${key}"]`) as HTMLInputElement;
+                    if (selectedParamInput) {
+                        selectedParamInput.value = value;
+                    }
                 }
             });
         });
@@ -654,6 +758,14 @@ export class EditorRenderer implements ViewHandle {
                         return;
                     }
                     
+                    // Normalize steps: ensure order field matches array position
+                    const normalizedSteps = (recipe.steps || []).map((step: any, index: number) => ({
+                        stepTypeId: step.stepTypeId,
+                        parameters: step.parameters || {},
+                        aliases: step.aliases || {},
+                        order: index  // Force order to match array position
+                    }));
+                    
                     // Load into editor (clear ID to treat as new, but preserve timestamps if they exist)
                     this.currentRecipe = {
                         id: '',  // Clear ID to create new recipe on save
@@ -661,7 +773,7 @@ export class EditorRenderer implements ViewHandle {
                         description: recipe.description || '',
                         author: recipe.author || '',
                         version: recipe.version || '1.0',
-                        steps: recipe.steps || [],
+                        steps: normalizedSteps,
                         createdAt: recipe.createdAt,  // Preserve original creation timestamp if available
                         lastModified: recipe.lastModified  // Preserve last modified timestamp if available
                     };

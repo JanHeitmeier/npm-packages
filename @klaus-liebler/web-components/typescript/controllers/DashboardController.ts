@@ -3,7 +3,7 @@ import { Ref, createRef, ref } from "lit-html/directives/ref.js";
 import "../../style/dashboard.css";
 import { ScreenController } from "./screen_controller";
 import { AppController } from "../app_controller";
-import { renderDashboard, sendCommand, type CommandDto } from "../recipe_management";
+import { renderDashboard, reRenderDashboard, sendCommand, type CommandDto } from "../recipe_management";
 import * as flatbuffers from 'flatbuffers';
 
 export class DashboardController extends ScreenController {
@@ -43,25 +43,5 @@ export class DashboardController extends ScreenController {
 
     public OnMessage(namespace: number, bb: flatbuffers.ByteBuffer): void {
         // Handled by AppController
-    }
-
-    private sendTestRecipe(): void {
-        const testRecipe = {
-            id: "test_recipe_002",
-            name: "Red-Yellow Alternating Test",
-            steps: [
-                {stepTypeId: "0x0001", systemId: "step_red_led_1", aliases: {LED: "LED0", RedButton: "RedButton"}},
-                {stepTypeId: "0x0002", systemId: "step_yellow_green_1", aliases: {LED: "LED1", GreenButton: "GreenButton"}}
-            ]
-        };
-
-        const cmd: CommandDto = {
-            command: 'start_recipe',
-            payload: testRecipe,  // Send as object, not string
-        };
-
-        sendCommand(cmd);
-        console.log('Sending recipe command:', JSON.stringify(cmd, null, 2));
-        this.appManagement.ShowSnackbar('info' as any, 'Test-Rezept gesendet');
     }
 }

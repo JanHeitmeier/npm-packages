@@ -3,7 +3,7 @@ import { Ref, createRef, ref } from "lit-html/directives/ref.js";
 import "../../style/analytics.css";
 import { ScreenController } from "./screen_controller";
 import { AppController } from "../app_controller";
-import { renderAnalytics } from "../recipe_management";
+import { renderAnalytics, reRenderAnalytics } from "../recipe_management";
 import * as flatbuffers from 'flatbuffers';
 
 export class AnalyticsController extends ScreenController {

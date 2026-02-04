@@ -125,22 +125,11 @@ function routeTypedMessage(message: any): void {
             recipeState.setLiveView(data);
             // When LiveView is received, check if we need to load recipe details
             const currentRecipe = recipeState.getCurrentRecipe();
-            if (data.recipeId) {
-                if (!currentRecipe || currentRecipe.id !== data.recipeId) {
-                    // First try to find recipe in availableRecipes (browser state)
-                    const availableRecipes = recipeState.getAvailableRecipes();
-                    const foundRecipe = availableRecipes?.recipes?.find(r => r.id === data.recipeId);
-                    
-                    if (foundRecipe) {
-                        // Found in list, but we need full RecipeDto with steps, so request it
-                        if (globalSendFunction) {
-                            globalSendFunction({ command: 'get_recipe', recipeId: data.recipeId });
-                        }
-                    } else {
-                        if (globalSendFunction) {
-                            globalSendFunction({ command: 'get_recipe', recipeId: data.recipeId });
-                        }
-                    }
+            if (data.recipeId && (!currentRecipe || currentRecipe.id !== data.recipeId)) {
+                // Recipe ID in LiveView doesn't match current recipe - load it
+                console.log('[RecipeManagement] LiveView has recipeId', data.recipeId, 'but currentRecipe is', currentRecipe?.id, '- loading recipe');
+                if (globalSendFunction) {
+                    globalSendFunction({ command: 'get_recipe', recipeId: data.recipeId });
                 }
             }
             break;
@@ -175,22 +164,11 @@ function routeUntypedMessage(message: any): void {
         recipeState.setLiveView(message);
         // When LiveView is received, check if we need to load recipe details
         const currentRecipe = recipeState.getCurrentRecipe();
-        if (message.recipeId) {
-            if (!currentRecipe || currentRecipe.id !== message.recipeId) {
-                // First try to find recipe in availableRecipes (browser state)
-                const availableRecipes = recipeState.getAvailableRecipes();
-                const foundRecipe = availableRecipes?.recipes?.find(r => r.id === message.recipeId);
-                
-                if (foundRecipe) {
-                    // Found in list, but we need full RecipeDto with steps, so request it
-                    if (globalSendFunction) {
-                        globalSendFunction({ command: 'get_recipe', recipeId: message.recipeId });
-                    }
-                } else {
-                    if (globalSendFunction) {
-                        globalSendFunction({ command: 'get_recipe', recipeId: message.recipeId });
-                    }
-                }
+        if (message.recipeId && (!currentRecipe || currentRecipe.id !== message.recipeId)) {
+            // Recipe ID in LiveView doesn't match current recipe - load it
+            console.log('[RecipeManagement] LiveView (untyped) has recipeId', message.recipeId, 'but currentRecipe is', currentRecipe?.id, '- loading recipe');
+            if (globalSendFunction) {
+                globalSendFunction({ command: 'get_recipe', recipeId: message.recipeId });
             }
         }
     } else if (message.recipes && Array.isArray(message.recipes)) {
@@ -218,9 +196,19 @@ export function renderLiveView(container: HTMLElement): void {
     liveViewRenderer!.render();
 }
 
+export function reRenderLiveView(): void {
+    ensureRenderer(liveViewRenderer, 'LiveViewRenderer');
+    liveViewRenderer!.render();
+}
+
 export function renderDashboard(container: HTMLElement): void {
     ensureRenderer(dashboardRenderer, 'DashboardRenderer');
     dashboardRenderer!.setContainer(container);
+    dashboardRenderer!.render();
+}
+
+export function reRenderDashboard(): void {
+    ensureRenderer(dashboardRenderer, 'DashboardRenderer');
     dashboardRenderer!.render();
 }
 
@@ -230,9 +218,19 @@ export function renderEditor(container: HTMLElement): void {
     editorRenderer!.render();
 }
 
+export function reRenderEditor(): void {
+    ensureRenderer(editorRenderer, 'EditorRenderer');
+    editorRenderer!.render();
+}
+
 export function renderAnalytics(container: HTMLElement): void {
     ensureRenderer(analyticsRenderer, 'AnalyticsRenderer');
     analyticsRenderer!.setContainer(container);
+    analyticsRenderer!.render();
+}
+
+export function reRenderAnalytics(): void {
+    ensureRenderer(analyticsRenderer, 'AnalyticsRenderer');
     analyticsRenderer!.render();
 }
 

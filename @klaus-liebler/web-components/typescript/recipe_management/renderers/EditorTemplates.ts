@@ -51,13 +51,15 @@ export function renderStepsList(steps: any[], selectedStepIndex: number, getStep
                 <div class="step-item-header">
                     <span class="step-number">${step.order + 1}</span>
                     <span class="step-type-name">${escapeHtml(getStepDisplayName(step.stepTypeId))}</span>
+                </div>
+                <div class="step-footer">
+                    <div class="step-category">${escapeHtml(step.stepTypeId)}</div>
                     <div class="step-actions">
-                        <button class="btn-icon" data-action="move-up" data-step-index="${index}" ${index === 0 ? 'disabled' : ''}>↑</button>
-                        <button class="btn-icon" data-action="move-down" data-step-index="${index}" ${index === steps.length - 1 ? 'disabled' : ''}>↓</button>
-                        <button class="btn-icon btn-danger" data-action="delete-step" data-step-index="${index}">🗑</button>
+                        <button class="btn-icon btn-arrow" data-action="move-up" data-step-index="${index}" ${index === 0 ? 'disabled' : ''}>↑</button>
+                        <button class="btn-icon btn-arrow" data-action="move-down" data-step-index="${index}" ${index === steps.length - 1 ? 'disabled' : ''}>↓</button>
+                        <button class="btn-icon btn-danger btn-delete" data-action="delete-step" data-step-index="${index}">🗑</button>
                     </div>
                 </div>
-                <div class="step-category">${escapeHtml(step.stepTypeId)}</div>
             </div>
         `).join('');
 }
@@ -67,7 +69,14 @@ export function renderStepParameters(step: any, stepMeta: any): string {
         return '<div class="no-step-selected">This step has no configurable parameters</div>';
     }
 
-    return stepMeta.parameters.map((paramMeta: any) => {
+    // Filter out global parameters - they are shown in the global section
+    const nonGlobalParams = stepMeta.parameters.filter((p: any) => !p.isGlobal);
+    
+    if (nonGlobalParams.length === 0) {
+        return '<div class="no-step-selected">This step has only global parameters (shown above)</div>';
+    }
+
+    return nonGlobalParams.map((paramMeta: any) => {
         const currentValue = step.parameters[paramMeta.name] || paramMeta.defaultValue || '';
         
         // Determine input type and attributes
@@ -75,7 +84,9 @@ export function renderStepParameters(step: any, stepMeta: any): string {
         let minAttr = '';
         let maxAttr = '';
         let stepAttr = '';
+        let inputValue = currentValue;
         
+        // Color type stays as text - no special handling needed
         if (paramMeta.type === 'int' || paramMeta.type === 'float') {
             inputType = 'number';
             if (paramMeta.minValue !== undefined && paramMeta.minValue !== '') {
@@ -127,7 +138,7 @@ export function renderStepParameters(step: any, stepMeta: any): string {
             <div class="parameter-item-wide">
                 <div class="parameter-label-section">
                     <label>
-                        ${escapeHtml(paramMeta.name)}${paramMeta.required ? ' *' : ''}
+                        ${escapeHtml(paramMeta.name)}
                         ${tooltipText ? `<span class="info-icon" title="${tooltipText}">ℹ️</span>` : ''}
                     </label>
                 </div>
@@ -135,10 +146,9 @@ export function renderStepParameters(step: any, stepMeta: any): string {
                     <div class="parameter-input-group">
                         <input 
                             type="${inputType}" 
-                            value="${escapeHtml(currentValue)}" 
+                            value="${escapeHtml(inputValue)}" 
                             data-param-key="${escapeHtml(paramMeta.name)}"
                             placeholder="${escapeHtml(paramMeta.defaultValue || '')}"
-                            ${paramMeta.required ? 'required' : ''}
                             ${minAttr}
                             ${maxAttr}
                             ${stepAttr}
@@ -177,6 +187,7 @@ export function renderMainEditor(
     isRecipeLoaderOpen: boolean,
     availableSteps: any,
     availableRecipes: any,
+    renderGlobalParametersHtml: string,
     renderStepParametersHtml: string,
     getStepDisplayName: (typeId: string) => string
 ): string {
@@ -269,12 +280,13 @@ export function renderMainEditor(
                 </div>
             </div>
 
-            <!-- Right: Step Parameters (Scrollable if needed) -->
+            <!-- Right: Parameters (Scrollable if needed) -->
             <div class="editor-step-parameters">
                 <div class="parameters-header">
                     <h2>Parameter</h2>
                 </div>
                 <div class="parameters-content">
+                    ${renderGlobalParametersHtml}
                     ${renderStepParametersHtml}
                 </div>
             </div>

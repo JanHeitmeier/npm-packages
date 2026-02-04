@@ -13,6 +13,7 @@ export class LiveViewRenderer implements ViewHandle {
     private sendCommandFn: ((cmd: any) => void) | null = null;
     private isDescriptionModalOpen: boolean = false;
     private pollingIntervalId: number | null = null;
+    private lastRequestedRecipeId: string = '';
 
     constructor(container: HTMLElement) {
         this.container = container;
@@ -51,6 +52,24 @@ export class LiveViewRenderer implements ViewHandle {
 
     render(): void {
         const liveView = recipeState.getLiveView();
+        const currentRecipe = recipeState.getCurrentRecipe();
+        
+        // If we have liveView with recipeId but no currentRecipe loaded, request it
+        if (liveView && liveView.recipeId && (!currentRecipe || currentRecipe.id !== liveView.recipeId)) {
+            // Only request once per recipeId to avoid spam
+            if (this.lastRequestedRecipeId !== liveView.recipeId) {
+                console.log('[LiveView] Recipe not loaded, requesting:', liveView.recipeId);
+                this.lastRequestedRecipeId = liveView.recipeId;
+                if (this.sendCommandFn) {
+                    this.sendCommandFn({ command: 'get_recipe', recipeId: liveView.recipeId });
+                }
+            }
+        }
+        
+        // Reset request tracker when recipe changes
+        if (currentRecipe && currentRecipe.id !== this.lastRequestedRecipeId) {
+            this.lastRequestedRecipeId = '';
+        }
         
         if (!liveView) {
             this.container.innerHTML = `
@@ -94,8 +113,6 @@ export class LiveViewRenderer implements ViewHandle {
             `;
             return;
         }
-
-        const currentRecipe = recipeState.getCurrentRecipe();
         
         const lastModified = currentRecipe?.lastModified 
             ? new Date(currentRecipe.lastModified).toLocaleString('de-DE', {
@@ -306,8 +323,6 @@ export class LiveViewRenderer implements ViewHandle {
     }
 
     private handleAction(action: string): void {
-        console.log('[LiveViewRenderer] handleAction called with action:', action);
-        
         if (action === 'show-description') {
             this.isDescriptionModalOpen = true;
             this.render();
@@ -334,10 +349,7 @@ export class LiveViewRenderer implements ViewHandle {
 
         const command = commandMap[action];
         if (command) {
-            console.log('[LiveViewRenderer] Sending command:', command);
             this.sendCommandFn({ command });
-        } else {
-            console.warn('[LiveViewRenderer] Unknown action:', action);
         }
     }
 

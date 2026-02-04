@@ -3,7 +3,7 @@ import { Ref, createRef, ref } from "lit-html/directives/ref.js";
 import "../../style/liveview.css";
 import { ScreenController } from "./screen_controller";
 import { AppController } from "../app_controller";
-import { renderLiveView } from "../recipe_management";
+import { renderLiveView, reRenderLiveView } from "../recipe_management";
 import * as flatbuffers from 'flatbuffers';
 
 export class LiveViewController extends ScreenController {

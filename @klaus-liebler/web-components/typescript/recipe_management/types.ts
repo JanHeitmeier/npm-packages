@@ -46,6 +46,7 @@ export interface ParameterMetadataDto {
     maxValue: string;
     required: boolean;
     unit: string;
+    isGlobal?: boolean;  // Rezeptweiter Parameter (z.B. Batch-Größe)
 }
 
 export interface IoAliasMetadataDto {

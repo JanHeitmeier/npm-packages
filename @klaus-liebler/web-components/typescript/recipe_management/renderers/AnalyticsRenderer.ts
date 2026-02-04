@@ -20,12 +20,6 @@ export class AnalyticsRenderer implements ViewHandle {
         this.container = container;
         this.container.classList.add('recipe-mgmt-analytics');
         this.unsubscribe = recipeState.subscribe(() => this.render());
-        
-        console.log('[ANALYTICS] Constructor called, sendCommandFn:', !!this.sendCommandFn);
-        if (this.sendCommandFn) {
-            console.log('[ANALYTICS] Requesting execution history from constructor');
-            this.sendCommandFn({ command: 'get_execution_history' });
-        }
     }
 
     setSendFunction(sendFn: (cmd: any) => void): void {
@@ -37,15 +31,18 @@ export class AnalyticsRenderer implements ViewHandle {
         this.container = container;
         this.container.classList.add('recipe-mgmt-analytics');
         
+        // Request execution history when container is set
+        if (this.sendCommandFn) {
+            this.sendCommandFn({ command: 'get_execution_history' });
+        }
+        
         // Check if there's a pre-selected execution from navigation
         const preSelectedExecutionId = recipeState.getSelectedExecutionId();
         if (preSelectedExecutionId && this.sendCommandFn) {
-            console.log('[ANALYTICS] Pre-selected executionId from state:', preSelectedExecutionId);
             const history = recipeState.getExecutionHistory();
             if (history && history.executions) {
                 const execution = history.executions.find(e => e.executionId === preSelectedExecutionId);
                 if (execution) {
-                    console.log('[ANALYTICS] Found execution, loading time series');
                     this.selectedExecution = execution;
                     this.sendCommandFn({ command: 'get_timeseries', executionId: preSelectedExecutionId });
                 }
@@ -164,14 +161,49 @@ export class AnalyticsRenderer implements ViewHandle {
     }
 
     private handleExportExecution(executionId: string): void {
-        // Placeholder für Export-Funktionalität
-        console.log('[ANALYTICS] Export execution:', executionId);
-        alert('Export-Funktionalität wird später implementiert.\nExecution ID: ' + executionId);
+        if (!this.timeSeriesData || this.timeSeriesData.executionId !== executionId) {
+            alert('Keine Sensor-Daten zum Exportieren verfügbar');
+            return;
+        }
         
-        // TODO: Implementierung folgt später
-        // - CSV Export der Sensor-Daten
-        // - JSON Export der gesamten Execution
-        // - PDF Report Generation
+        if (this.timeSeriesData.series.length === 0) {
+            alert('Keine Sensor-Daten vorhanden');
+            return;
+        }
+        
+        this.exportChartsAsImages(executionId);
+    }
+
+    private exportChartsAsImages(executionId: string): void {
+        if (!this.selectedExecution || !this.timeSeriesData) return;
+        
+        const startTimeStr = new Date(this.selectedExecution.startTime).toISOString().replace(/[:.]/g, '-').slice(0, 19);
+        
+        // Create a temporary canvas for export (larger resolution)
+        const exportCanvas = document.createElement('canvas');
+        exportCanvas.width = 1200;
+        exportCanvas.height = 600;
+        
+        this.timeSeriesData.series.forEach(sensor => {
+            // Draw chart on temporary canvas
+            this.drawChart(exportCanvas, sensor);
+            
+            // Convert canvas to blob and download
+            exportCanvas.toBlob((blob) => {
+                if (!blob) return;
+                
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `${executionId}_${startTimeStr}_${sensor.sensorName}.png`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+            }, 'image/png');
+        });
+        
+        console.log(`[ANALYTICS] Exported ${this.timeSeriesData.series.length} charts for execution ${executionId}`);
     }
 
     private drawChart(canvas: HTMLCanvasElement, sensor: SensorTimeSeriesDto): void {
@@ -180,7 +212,7 @@ export class AnalyticsRenderer implements ViewHandle {
         
         const width = canvas.width;
         const height = canvas.height;
-        const padding = 50;
+        const padding = 60;
         const chartWidth = width - 2 * padding;
         const chartHeight = height - 2 * padding;
         
@@ -197,14 +229,78 @@ export class AnalyticsRenderer implements ViewHandle {
         const maxTime = Math.max(...timestamps);
         const timeRange = maxTime - minTime || 1;
         
-        ctx.strokeStyle = '#ccc';
-        ctx.lineWidth = 1;
+        // Background
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, width, height);
+        
+        // Draw axes
+        ctx.strokeStyle = '#333';
+        ctx.lineWidth = 2;
         ctx.beginPath();
         ctx.moveTo(padding, padding);
         ctx.lineTo(padding, height - padding);
         ctx.lineTo(width - padding, height - padding);
         ctx.stroke();
         
+        // Draw grid lines
+        ctx.strokeStyle = '#e0e0e0';
+        ctx.lineWidth = 1;
+        
+        // Horizontal grid lines (5 lines)
+        for (let i = 0; i <= 5; i++) {
+            const y = padding + (chartHeight / 5) * i;
+            ctx.beginPath();
+            ctx.moveTo(padding, y);
+            ctx.lineTo(width - padding, y);
+            ctx.stroke();
+        }
+        
+        // Vertical grid lines (5 lines)
+        for (let i = 0; i <= 5; i++) {
+            const x = padding + (chartWidth / 5) * i;
+            ctx.beginPath();
+            ctx.moveTo(x, padding);
+            ctx.lineTo(x, height - padding);
+            ctx.stroke();
+        }
+        
+        // Y-Axis labels (values from min to max)
+        ctx.fillStyle = '#333';
+        ctx.font = '12px Dosis';
+        ctx.textAlign = 'right';
+        ctx.textBaseline = 'middle';
+        
+        for (let i = 0; i <= 5; i++) {
+            const value = minValue + (valueRange / 5) * (5 - i);
+            const y = padding + (chartHeight / 5) * i;
+            ctx.fillText(value.toFixed(2), padding - 10, y);
+        }
+        
+        // X-Axis labels (time duration)
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
+        
+        const durationMs = timeRange;
+        for (let i = 0; i <= 5; i++) {
+            const timeMs = (durationMs / 5) * i;
+            const x = padding + (chartWidth / 5) * i;
+            
+            // Format time as MM:SS or HH:MM:SS
+            const seconds = Math.floor(timeMs / 1000);
+            const minutes = Math.floor(seconds / 60);
+            const hours = Math.floor(minutes / 60);
+            
+            let timeLabel: string;
+            if (hours > 0) {
+                timeLabel = `${hours}:${String(minutes % 60).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`;
+            } else {
+                timeLabel = `${minutes}:${String(seconds % 60).padStart(2, '0')}`;
+            }
+            
+            ctx.fillText(timeLabel, x, height - padding + 10);
+        }
+        
+        // Draw data line
         ctx.strokeStyle = 'var(--blue-base)';
         ctx.lineWidth = 2;
         ctx.beginPath();
@@ -222,6 +318,7 @@ export class AnalyticsRenderer implements ViewHandle {
         
         ctx.stroke();
         
+        // Draw data points
         ctx.fillStyle = 'var(--blue-base)';
         sensor.dataPoints.forEach(point => {
             const x = padding + ((point.timestamp - minTime) / timeRange) * chartWidth;
@@ -231,15 +328,12 @@ export class AnalyticsRenderer implements ViewHandle {
             ctx.fill();
         });
         
-        ctx.fillStyle = 'var(--text-dark)';
-        ctx.font = '12px Dosis';
+        // Title
+        ctx.fillStyle = '#333';
+        ctx.font = 'bold 16px Dosis';
         ctx.textAlign = 'left';
-        ctx.fillText(`${sensor.sensorName} (${sensor.unit})`, padding, padding - 10);
-        
-        ctx.textAlign = 'right';
-        ctx.fillText(`Max: ${maxValue.toFixed(2)} ${sensor.unit}`, width - padding, padding - 10);
-        ctx.textAlign = 'left';
-        ctx.fillText(`Min: ${minValue.toFixed(2)} ${sensor.unit}`, padding, height - padding + 30);
+        ctx.textBaseline = 'top';
+        ctx.fillText(`${sensor.sensorName} (${sensor.unit})`, padding, 10);
     }
 
     render(): void {
@@ -247,28 +341,18 @@ export class AnalyticsRenderer implements ViewHandle {
         const timeSeriesData = recipeState.getTimeSeriesData();
         const executions = this.getSortedExecutions();
         
-        console.log('[ANALYTICS] Rendering analytics view');
-        console.log('[ANALYTICS] Execution history:', executionHistory);
-        console.log('[ANALYTICS] Time series data:', timeSeriesData);
-        console.log('[ANALYTICS] Selected execution:', this.selectedExecution);
-        
         if (timeSeriesData && timeSeriesData.executionId === this.selectedExecution?.executionId) {
-            console.log('[ANALYTICS] Time series data matches selected execution!');
-            console.log('[ANALYTICS] Series count:', timeSeriesData.series?.length || 0);
             this.timeSeriesData = timeSeriesData;
             if (this.timeSeriesData.series.length > 0 && !this.selectedSensor) {
                 this.selectedSensor = this.timeSeriesData.series[0].sensorName;
-                console.log('[ANALYTICS] Auto-selected first sensor:', this.selectedSensor);
             }
-        } else if (timeSeriesData) {
-            console.warn('[ANALYTICS] Time series data executionId mismatch!', {
-                dataId: timeSeriesData.executionId,
-                selectedId: this.selectedExecution?.executionId
-            });
         }
         
         this.container.innerHTML = `
             <div class="analytics-layout">
+                <!-- Analytics Title -->
+                <div class="analytics-title">Analytics</div>
+                
                 <!-- Left: Execution List (30%) -->
                 <div class="execution-list-panel">
                     <h2>Ausführungen</h2>
@@ -457,28 +541,19 @@ export class AnalyticsRenderer implements ViewHandle {
     }
 
     private renderChart(): void {
-        console.log('[ANALYTICS] renderChart called');
-        console.log('[ANALYTICS] timeSeriesData:', this.timeSeriesData);
-        console.log('[ANALYTICS] selectedSensor:', this.selectedSensor);
-        
         if (!this.timeSeriesData || !this.selectedSensor) {
-            console.warn('[ANALYTICS] Cannot render chart: missing data or sensor selection');
             return;
         }
         
         const sensor = this.timeSeriesData.series.find(s => s.sensorName === this.selectedSensor);
         if (!sensor) {
-            console.error('[ANALYTICS] Selected sensor not found in series:', this.selectedSensor);
+            console.error('[ANALYTICS] Selected sensor not found:', this.selectedSensor);
             return;
         }
-        
-        console.log('[ANALYTICS] Rendering chart for sensor:', sensor.sensorName, 'with', sensor.dataPoints?.length || 0, 'points');
         
         const canvas = this.container.querySelector('#chart-canvas') as HTMLCanvasElement;
         if (canvas) {
             this.drawChart(canvas, sensor);
-        } else {
-            console.error('[ANALYTICS] Canvas element not found!');
         }
     }
 

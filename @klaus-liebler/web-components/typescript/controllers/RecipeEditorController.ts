@@ -4,7 +4,7 @@ import "../../style/recipe-editor.css";
 import "../../style/recipe-editor-grid.css";
 import { ScreenController } from "./screen_controller";
 import { AppController } from "../app_controller";
-import { renderEditor } from "../recipe_management";
+import { renderEditor, reRenderEditor } from "../recipe_management";
 import * as flatbuffers from 'flatbuffers';
 
 export class RecipeEditorController extends ScreenController {

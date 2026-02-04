@@ -58,17 +58,14 @@ export class DashboardRenderer implements ViewHandle {
     private onStateChange(): void {
         const availableRecipes = recipeState.getAvailableRecipes();
         if (availableRecipes && availableRecipes.recipes) {
-            console.log('[DashboardRenderer] Available recipes received from backend:', availableRecipes.recipes.length);
             this.backendRecipesLoaded = true;
             
             // Replace localStorage with backend data (even if empty)
             try {
                 if (availableRecipes.recipes.length > 0) {
                     localStorage.setItem('recipe_available_recipes', JSON.stringify(availableRecipes));
-                    console.log('[DashboardRenderer] Recipes replaced in localStorage');
                 } else {
                     localStorage.removeItem('recipe_available_recipes');
-                    console.log('[DashboardRenderer] No recipes from backend - localStorage cleared');
                 }
             } catch (error) {
                 console.error('[DashboardRenderer] Error updating localStorage:', error);
@@ -260,12 +257,10 @@ export class DashboardRenderer implements ViewHandle {
 
     private attachEventListeners(): void {
         const buttons = this.container.querySelectorAll('[data-action]');
-        console.log('[DashboardRenderer] Attaching event listeners to', buttons.length, 'buttons');
         buttons.forEach(btn => {
             const action = (btn as HTMLElement).dataset.action;
             const recipeId = (btn as HTMLElement).dataset.recipeId;
             const executionId = (btn as HTMLElement).dataset.executionId;
-            console.log('[DashboardRenderer] Attaching listener for action:', action);
             btn.addEventListener('click', () => this.handleAction(action!, recipeId || executionId));
         });
     }
@@ -280,20 +275,15 @@ export class DashboardRenderer implements ViewHandle {
 
         switch (action) {
             case 'start':
-                console.log('[DashboardRenderer] Processing start action');
                 const select = this.container.querySelector('#recipe-select') as HTMLSelectElement;
                 const selectedId = select?.value;
-                console.log('[DashboardRenderer] Selected recipe ID:', selectedId);
                 if (selectedId) {
                     // Find recipe name
-                    const availableRecipes = recipeState.getAvailableRecipes();
-                    const recipe = availableRecipes?.recipes?.find(r => r.id === selectedId);
-                    console.log('[DashboardRenderer] Found recipe:', recipe);
+                    const availableRecipes = recipeState.getAvailableRecipes();                    const recipe = availableRecipes?.recipes?.find(r => r.id === selectedId);
                     if (recipe) {
                         // Show confirmation modal
                         this.selectedRecipeForStart = { id: selectedId, name: recipe.name };
                         this.isStartConfirmModalOpen = true;
-                        console.log('[DashboardRenderer] Opening confirmation modal');
                         this.render();
                     }
                 } else {
@@ -301,19 +291,27 @@ export class DashboardRenderer implements ViewHandle {
                 }
                 break;
             case 'confirm-start-recipe':
-                console.log('[DashboardRenderer] Confirming recipe start');
+                console.log('[DashboardRenderer] Starting recipe:', this.selectedRecipeForStart?.id);
                 if (this.selectedRecipeForStart) {
-                    console.log('[DashboardRenderer] Sending start_recipe command for:', this.selectedRecipeForStart.id);
-                    this.sendCommandFn({ command: 'start_recipe', recipeId: this.selectedRecipeForStart.id });
+                    const recipeIdToStart = this.selectedRecipeForStart.id;
+                    
+                    // Load recipe details first to ensure state is populated
+                    this.sendCommandFn({ command: 'get_recipe', recipeId: recipeIdToStart });
+                    
+                    // Short delay to allow recipe to load, then start
+                    setTimeout(() => {
+                        this.sendCommandFn({ command: 'start_recipe', recipeId: recipeIdToStart });
+                        
+                        // Navigate to Live View after starting recipe
+                        if (this.navigateFn) {
+                            console.log('[DashboardRenderer] Navigating to Live View');
+                            this.navigateFn('live');
+                        }
+                    }, 200);
+                    
                     this.isStartConfirmModalOpen = false;
                     this.selectedRecipeForStart = null;
                     this.currentlySelectedRecipeId = '';
-                    
-                    // Navigate to Live View after starting recipe
-                    if (this.navigateFn) {
-                        console.log('[DashboardRenderer] Navigating to Live View');
-                        this.navigateFn('live');
-                    }
                 }
                 break;
             case 'close-start-confirm':
