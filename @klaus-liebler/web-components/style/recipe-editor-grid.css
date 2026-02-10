@@ -68,10 +68,11 @@
     overflow: hidden;
     display: flex;
     flex-direction: column;
+    gap: 8px;
 }
 
 .editor-details h2 {
-    margin: 0 0 15px 0;
+    margin: 0 0 8px 0;
     font-size: 1.2rem;
     color: var(--text-dark);
 }
@@ -79,13 +80,14 @@
 .details-form {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 0px;
+    flex-shrink: 0;
 }
 
 .form-group {
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 2px;
 }
 
 .form-group label {
@@ -105,6 +107,59 @@
 .form-group textarea {
     resize: vertical;
     min-height: 60px;
+}
+
+/* Recipe-Wide Parameters Section in Details */
+.recipe-wide-parameters-section {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 2px solid var(--blue-light);
+}
+
+.recipe-wide-parameters-section h3 {
+    margin: 0 0 8px 0;
+    color: var(--text-dark);
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.recipe-wide-params-hint {
+    margin: 0 0 10px 0;
+    color: var(--text-light);
+    font-size: 0.8rem;
+}
+
+.recipe-wide-parameters-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.recipe-wide-parameters-grid .parameter-item {
+    background: var(--blue-bg);
+    border: 1px solid var(--blue-light);
+    border-radius: 4px;
+    padding: 10px;
+    margin-bottom: 0;
+}
+
+.recipe-wide-parameters-grid .parameter-item label {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-dark);
+    margin-bottom: 4px;
+}
+
+.recipe-wide-parameters-grid .parameter-item input {
+    width: 100%;
+    padding: 6px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 0.85rem;
 }
 
 /* Steps List */
@@ -362,18 +417,6 @@
     font-size: 0.9rem;
 }
 
-.parameter-description {
-    font-size: 0.85rem;
-    color: #666;
-    font-style: italic;
-}
-
-.parameter-limits {
-    font-size: 0.85rem;
-    color: #2196F3;
-    font-weight: 500;
-}
-
 .no-step-selected {
     padding: 20px;
     text-align: center;
@@ -388,44 +431,7 @@
 
 /* Global Parameters Section */
 .global-parameters-section {
-    border-radius: 8px;
-    padding: 20px;
-    margin-bottom: 25px;
-}
-
-.global-parameters-section h3 {
-    margin: 0 0 8px 0;
-    color: var(--text-primary);
-    font-size: 1.2rem;
-    font-weight: 600;
-}
-
-.global-params-hint {
-    margin: 0 0 15px 0;
-    color: rgba(255,255,255,0.9);
-    font-size: 0.85rem;
-}
-
-.global-parameters-grid {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-}
-
-.global-parameters-grid .parameter-item {
-    background: white;
-    border-radius: 6px;
-    padding: 12px;
-    margin-bottom: 0;
-}
-
-.global-badge {
-    background: linear-gradient(135deg, #667eea, #764ba2);
-    color: white;
-    border-radius: 50%;
-    padding: 2px 6px;
-    font-size: 0.85rem;
-    font-weight: bold;
+    display: none;
 }
 
 /* Buttons */
@@ -443,47 +449,47 @@
 }
 
 .btn-primary {
-    background: #667eea;
+    background: var(--blue-base);
     color: white;
 }
 
 .btn-primary:hover {
-    background: #5568d3;
+    background: var(--blue-dark);
 }
 
 .btn-secondary {
-    background: #e0e0e0;
-    color: #333;
+    background: var(--blue-light);
+    color: white;
 }
 
 .btn-secondary:hover {
-    background: #d0d0d0;
+    background: var(--blue-base);
 }
 
 .btn-success {
-    background: #4CAF50;
+    background: var(--success-green);
     color: white;
 }
 
 .btn-success:hover {
-    background: #45a049;
+    background: #388E3C;
 }
 
 .btn-danger {
-    background: #f44336;
+    background: var(--error-red);
     color: white;
 }
 
 .btn-danger:hover {
-    background: #da190b;
+    background: #B71C1C;
 }
 
 .btn-icon {
-    width: 32px;
-    height: 32px;
-    padding: 4px;
+    width: 40px;
+    height: 40px;
+    padding: 6px;
     background: #e0e0e0;
-    font-size: 1rem;
+    font-size: 1.3rem;
 }
 
 .btn-icon:hover {
@@ -493,6 +499,15 @@
 .btn-icon:disabled {
     opacity: 0.5;
     cursor: not-allowed;
+}
+
+.btn-icon.btn-danger {
+    background: var(--error-red);
+    color: var(--white);
+}
+
+.btn-icon.btn-danger:hover {
+    background: #b71c1c;
 }
 
 /* Step Selector Modal */

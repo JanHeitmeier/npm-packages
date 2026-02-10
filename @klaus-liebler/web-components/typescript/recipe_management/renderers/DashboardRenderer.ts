@@ -9,7 +9,7 @@ export class DashboardRenderer implements ViewHandle {
     private navigateFn: ((view: 'live' | 'dashboard' | 'editor' | 'analytics') => void) | null = null;
     private backendRecipesLoaded: boolean = false;
     private isStartConfirmModalOpen: boolean = false;
-    private selectedRecipeForStart: { id: string; name: string } | null = null;
+    private selectedRecipeForStart: { id: string; name: string; globalParameters: Record<string, string> } | null = null;
     private currentlySelectedRecipeId: string = '';
 
     constructor(container: HTMLElement) {
@@ -149,6 +149,7 @@ export class DashboardRenderer implements ViewHandle {
                 <div class="quick-stats dashboard-field">
                     <h2>Overview</h2>
                     <p>Available Recipes: ${availableRecipes?.recipes?.length || 0}</p>
+                    <p>Recipe Executions in History: ${recipeState.getExecutionHistory()?.executions?.length || 0}</p>
                 </div>
 
                 <div class="recipe-history dashboard-field">
@@ -174,24 +175,45 @@ export class DashboardRenderer implements ViewHandle {
     private renderStartConfirmModal(): string {
         if (!this.selectedRecipeForStart) return '';
         
+        const globalParamsHtml = Object.keys(this.selectedRecipeForStart.globalParameters).length > 0
+            ? `
+                <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #e0e0e0;">
+                    <h3 style="margin: 0 0 15px 0; font-size: 14px; color: #666;">Recipe Parameters:</h3>
+                    ${Object.entries(this.selectedRecipeForStart.globalParameters).map(([key, value]) => `
+                        <div style="margin-bottom: 12px;">
+                            <label style="display: block; font-weight: 600; margin-bottom: 4px; font-size: 13px;">
+                                ${escapeHtml(key)}
+                            </label>
+                            <input 
+                                type="text" 
+                                data-global-param="${escapeHtml(key)}"
+                                value="${escapeHtml(value)}"
+                                style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px;" />
+                        </div>
+                    `).join('')}
+                </div>
+            `
+            : '';
+        
         return `
             <div class="modal-overlay" data-action="close-start-confirm" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 10000;">
                 <div class="modal-content" style="max-width: 500px; background: white; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);" onclick="event.stopPropagation()">
                     <div class="modal-header" style="padding: 20px; border-bottom: 1px solid #e0e0e0; position: relative;">
-                        <h2 style="margin: 0;">Start Recipe?</h2>
+                        <h2 style="margin: 0;">Start Recipe</h2>
                         <button class="modal-close" data-action="close-start-confirm" style="position: absolute; top: 10px; right: 10px; background: none; border: none; font-size: 24px; cursor: pointer; color: #666;">×</button>
                     </div>
                     <div class="modal-body" style="padding: 20px;">
-                        <p style="font-size: 16px; margin-bottom: 20px;">
-                            Do you want to start recipe <strong>"${escapeHtml(this.selectedRecipeForStart.name)}"</strong>?
+                        <p style="font-size: 16px; margin-bottom: 10px;">
+                            <strong>"${escapeHtml(this.selectedRecipeForStart.name)}"</strong>
                         </p>
-                        <p style="color: #666; font-size: 14px;">
+                        <p style="color: #666; font-size: 13px; margin: 0;">
                             ID: ${escapeHtml(this.selectedRecipeForStart.id)}
                         </p>
+                        ${globalParamsHtml}
                     </div>
                     <div class="modal-footer" style="padding: 20px; border-top: 1px solid #e0e0e0; display: flex; gap: 10px; justify-content: flex-end;">
                         <button class="btn-secondary" data-action="close-start-confirm" style="padding: 10px 20px; background: #ccc; border: none; border-radius: 4px; cursor: pointer;">Cancel</button>
-                        <button class="btn-primary" data-action="confirm-start-recipe" style="padding: 10px 20px; background: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">▶ Start Now</button>
+                        <button class="btn-primary" data-action="confirm-start-recipe" style="padding: 10px 20px; background: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">Start</button>
                     </div>
                 </div>
             </div>
@@ -229,7 +251,7 @@ export class DashboardRenderer implements ViewHandle {
             <ul style="list-style: none; padding: 0; margin: 0;">
                 ${recentExecutions.map(exec => {
                     const date = new Date(exec.startTime);
-                    const dateStr = date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+                    const dateStr = date.toLocaleDateString('de-DE') + ' ' + date.toLocaleTimeString('de-DE');
                     const durationSec = Math.round(exec.duration / 1000);
                     const statusIcon = exec.status === 'completed' ? '✓' : exec.status === 'error' ? '✗' : '●';
                     const statusColor = exec.status === 'completed' ? '#4CAF50' : exec.status === 'error' ? '#f44336' : '#ff9800';
@@ -263,6 +285,30 @@ export class DashboardRenderer implements ViewHandle {
             const executionId = (btn as HTMLElement).dataset.executionId;
             btn.addEventListener('click', () => this.handleAction(action!, recipeId || executionId));
         });
+        
+        const globalParamInputs = this.container.querySelectorAll('[data-global-param]');
+        globalParamInputs.forEach(input => {
+            input.addEventListener('input', (e) => {
+                const target = e.target as HTMLInputElement;
+                const key = target.dataset.globalParam!;
+                const value = target.value;
+                if (this.selectedRecipeForStart) {
+                    this.selectedRecipeForStart.globalParameters[key] = value;
+                }
+            });
+        });
+        
+        // Load recipe when selected from dropdown
+        const recipeSelect = this.container.querySelector('#recipe-select') as HTMLSelectElement;
+        if (recipeSelect) {
+            recipeSelect.addEventListener('change', (e) => {
+                const selectedId = (e.target as HTMLSelectElement).value;
+                if (selectedId && this.sendCommandFn) {
+                    console.log('[DashboardRenderer] Recipe selected, loading:', selectedId);
+                    this.sendCommandFn({ command: 'get_recipe', recipeId: selectedId });
+                }
+            });
+        }
     }
 
     private handleAction(action: string, recipeId?: string): void {
@@ -278,13 +324,22 @@ export class DashboardRenderer implements ViewHandle {
                 const select = this.container.querySelector('#recipe-select') as HTMLSelectElement;
                 const selectedId = select?.value;
                 if (selectedId) {
-                    // Find recipe name
-                    const availableRecipes = recipeState.getAvailableRecipes();                    const recipe = availableRecipes?.recipes?.find(r => r.id === selectedId);
-                    if (recipe) {
-                        // Show confirmation modal
-                        this.selectedRecipeForStart = { id: selectedId, name: recipe.name };
+                    const availableRecipes = recipeState.getAvailableRecipes();
+                    const recipeInfo = availableRecipes?.recipes?.find(r => r.id === selectedId);
+                    const fullRecipe = recipeState.getCurrentRecipe();
+                    
+                    if (recipeInfo && fullRecipe && fullRecipe.id === selectedId) {
+                        // Recipe already loaded from dropdown selection
+                        const globalParams = fullRecipe.globalParameters || {};
+                        this.selectedRecipeForStart = { 
+                            id: selectedId, 
+                            name: recipeInfo.name,
+                            globalParameters: { ...globalParams }
+                        };
                         this.isStartConfirmModalOpen = true;
                         this.render();
+                    } else {
+                        console.warn('[DashboardRenderer] Recipe not loaded yet, please wait');
                     }
                 } else {
                     console.warn('[DashboardRenderer] No recipe selected');
@@ -293,21 +348,44 @@ export class DashboardRenderer implements ViewHandle {
             case 'confirm-start-recipe':
                 console.log('[DashboardRenderer] Starting recipe:', this.selectedRecipeForStart?.id);
                 if (this.selectedRecipeForStart) {
-                    const recipeIdToStart = this.selectedRecipeForStart.id;
-                    
-                    // Load recipe details first to ensure state is populated
-                    this.sendCommandFn({ command: 'get_recipe', recipeId: recipeIdToStart });
-                    
-                    // Short delay to allow recipe to load, then start
-                    setTimeout(() => {
-                        this.sendCommandFn({ command: 'start_recipe', recipeId: recipeIdToStart });
+                    const fullRecipe = recipeState.getCurrentRecipe();
+                    if (fullRecipe) {
+                        // Apply updated global parameters to step parameters before sending
+                        const availableSteps = recipeState.getAvailableSteps();
+                        const modifiedRecipe = {
+                            ...fullRecipe,
+                            globalParameters: this.selectedRecipeForStart.globalParameters,
+                            steps: fullRecipe.steps.map(step => {
+                                const stepMeta = availableSteps?.steps?.find((s: any) => s.typeId === step.stepTypeId);
+                                const updatedParams = { ...step.parameters };
+                                
+                                // Fill step parameters with current global parameter values
+                                if (stepMeta?.parameters && this.selectedRecipeForStart.globalParameters) {
+                                    for (const paramMeta of stepMeta.parameters) {
+                                        if (paramMeta.isGlobal) {
+                                            const globalValue = this.selectedRecipeForStart.globalParameters[paramMeta.name];
+                                            if (globalValue !== undefined) {
+                                                updatedParams[paramMeta.name] = globalValue;
+                                            }
+                                        }
+                                    }
+                                }
+                                
+                                return {
+                                    ...step,
+                                    parameters: updatedParams
+                                };
+                            })
+                        };
                         
-                        // Navigate to Live View after starting recipe
+                        console.log('[Dashboard] Sending recipe with merged parameters:', modifiedRecipe);
+                        this.sendCommandFn({ command: 'start_recipe', payload: modifiedRecipe });
+                        
                         if (this.navigateFn) {
                             console.log('[DashboardRenderer] Navigating to Live View');
                             this.navigateFn('live');
                         }
-                    }, 200);
+                    }
                     
                     this.isStartConfirmModalOpen = false;
                     this.selectedRecipeForStart = null;

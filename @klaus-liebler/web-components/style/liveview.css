@@ -16,7 +16,7 @@ body {
     height: 100vh;
     display: grid;
     grid-template-columns: repeat(20, 1fr);
-    grid-template-rows: 80px 2fr 1fr auto;
+    grid-template-rows: 80px 2fr 1fr 150px;
     overflow: hidden;
     padding: 0 !important;
     margin: 0 !important;
@@ -63,6 +63,7 @@ body {
     font-size: 0.95rem;
     color: var(--text-dark);
     flex-shrink: 0;
+    align-self: flex-start;
 }
 
 .live-details .details-content {
@@ -209,12 +210,30 @@ body {
     min-height: 60px;
     width: 100%;
     background: var(--white);
-    border: 1px solid var(--blue-light);
+    border: 2px solid var(--blue-light);
+    border-radius: 6px;
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    padding: 0;
+    padding: 8px;
+    margin-bottom: 8px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.step-box.completed {
+    background: var(--success-green);
+    color: var(--white);
+    border-color: #388E3C;
+}
+
+.step-box.current {
+    background: var(--warning-yellow);
+    color: var(--text-dark);
+    border-color: #FF8F00;
+    font-weight: 600;
+    box-shadow: 0 2px 8px rgba(255, 193, 7, 0.4);
 }
 
 .live-sensors {
@@ -242,6 +261,79 @@ body {
     flex: 1;
     overflow-y: auto;
     overflow-x: hidden;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 12px;
+    padding: 10px 0;
+}
+
+.sensor-item {
+    background: var(--white);
+    border: 2px solid var(--blue-light);
+    border-radius: 8px;
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.sensor-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.sensor-name {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-dark);
+    text-align: center;
+    word-break: break-word;
+}
+
+.sensor-value {
+    font-size: 1.1rem;
+    font-weight: bold;
+    padding: 6px 12px;
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* Boolean sensor values styling */
+.sensor-value:contains("True"),
+.sensor-item[data-value="true"] .sensor-value {
+    background: var(--success-green);
+    color: var(--white);
+}
+
+.sensor-value:contains("False"),
+.sensor-item[data-value="false"] .sensor-value {
+    background: #E0E0E0;
+    color: #666;
+}
+
+/* Sensor status classes */
+.sensor-item.sensor-active {
+    border-color: var(--success-green);
+    background: linear-gradient(135deg, #ffffff 0%, #e8f5e9 100%);
+}
+
+.sensor-item.sensor-inactive {
+    border-color: #BDBDBD;
+}
+
+.sensor-item.sensor-numeric {
+    border-color: var(--blue-base);
+}
+
+.sensor-item.sensor-numeric .sensor-value {
+    background: var(--blue-base);
+    color: var(--white);
 }
 
 .control-buttons {
@@ -269,6 +361,37 @@ body {
     font-size: 28px;
     cursor: pointer;
     transition: all 0.2s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+}
+
+.control-btn .icon {
+    font-size: 2em;
+    line-height: 1;
+}
+
+.control-btn .label {
+    font-size: 0.8em;
+    line-height: 1;
+}
+
+.control-btn.pause-btn {
+    background: var(--warning-yellow);
+    border-color: #FF8F00;
+    color: var(--text-dark);
+}
+
+.control-btn.resume-btn {
+    background: var(--success-green);
+    border-color: #2e7d32;
+}
+
+.control-btn.stop-btn {
+    background: var(--error-red);
+    border-color: #B71C1C;
 }
 
 .control-btn:hover {
@@ -321,7 +444,8 @@ body {
 }
 
 .live-instructions h3,
-.live-acknowledge h3 {
+.live-acknowledge h3,
+.live-status h3 {
     margin: 0;
     font-size: 1rem;
     color: var(--text-dark);
@@ -345,6 +469,9 @@ body {
 .status-content {
     flex: 1;
     overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .status-buttons {
@@ -355,14 +482,34 @@ body {
 }
 
 .status-btn {
-    width: 60px;
-    height: 60px;
+    width: 100%;
+    height: 70px;
     background: #4CAF50;
     border: 2px solid #2e7d32;
     color: white;
     font-size: 24px;
     cursor: pointer;
     transition: all 0.2s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+}
+
+.status-btn .icon {
+    font-size: 2em;
+    line-height: 1;
+}
+
+.status-btn .label {
+    font-size: 0.7em;
+    line-height: 1;
+}
+
+.status-btn.ack-ok {
+    background: var(--success-green);
+    border-color: #2e7d32;
 }
 
 .status-btn:hover {
@@ -372,4 +519,47 @@ body {
 
 .status-btn:active {
     transform: scale(0.95);
+}
+
+.no-action-text {
+    color: var(--text-light);
+    font-style: italic;
+    text-align: center;
+    margin: 0;
+}
+
+.recipe-inactive-text {
+    color: var(--text-light);
+    font-style: italic;
+    text-align: center;
+    margin: 0;
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 8px 16px;
+    border-radius: 4px;
+    font-weight: bold;
+    font-size: 1.1rem;
+    text-transform: uppercase;
+    text-align: center;
+    width: 100%;
+}
+
+.status-badge.status-running {
+    background-color: var(--success-green);
+    color: var(--white);
+}
+
+.status-badge.status-paused {
+    background-color: var(--warning-yellow);
+    color: var(--text-dark);
+}
+
+.status-badge.status-stopped,
+.status-badge.status-idle,
+.status-badge.status-completed,
+.status-badge.status-error {
+    background-color: #9E9E9E;
+    color: var(--white);
 }

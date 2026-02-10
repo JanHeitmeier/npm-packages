@@ -51,10 +51,13 @@ export interface ParameterMetadataDto {
 
 export interface IoAliasMetadataDto {
     aliasName: string;
-    ioType: 'input' | 'output' | 'sensor';
+    isInput: boolean;
+    isOutput: boolean;
+    isSensor: boolean;
     valueType: 'bool' | 'int' | 'float';
     description: string;
     defaultPhysicalName: string;  // Default physical resource (z.B. LED → LED0)
+    unit: string;  // Unit for sensor values (e.g. "°C", "%", "RPM")
 }
 
 export interface StepMetadataDto {
@@ -84,8 +87,9 @@ export interface RecipeDto {
     steps: StepConfigDto[];
     author: string;
     version: string;
-    createdAt?: number;  // Unix timestamp in milliseconds
-    lastModified?: number;  // Unix timestamp in milliseconds
+    createdAt?: number;
+    lastModified?: number;
+    globalParameters?: Record<string, string>;
 }
 
 export interface RecipeExecutionDto {
@@ -97,6 +101,7 @@ export interface RecipeExecutionDto {
     duration: number;
     status: string;
     errorMessage: string;
+    globalParameters?: Record<string, string>;
 }
 
 export interface ExecutionHistoryDto {

@@ -267,6 +267,7 @@ export function renderMainEditor(
                     </div>
                     ` : ''}
                 </div>
+                ${renderGlobalParametersHtml}
             </div>
 
             <!-- Center: Steps List (Scrollable) -->
@@ -286,7 +287,6 @@ export function renderMainEditor(
                     <h2>Parameter</h2>
                 </div>
                 <div class="parameters-content">
-                    ${renderGlobalParametersHtml}
                     ${renderStepParametersHtml}
                 </div>
             </div>

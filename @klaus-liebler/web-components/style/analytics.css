@@ -11,367 +11,254 @@
     height: 100%;
 }
 
+/* ============================================================
+   NEW CARD-BASED LAYOUT
+   ============================================================ */
+
 .analytics-layout {
     width: 100vw;
     height: 100vh;
-    display: grid;
-    grid-template-columns: repeat(10, 1fr);
-    grid-template-rows: 80px 1fr;
-    overflow: hidden;
-    padding: 0;
-    margin: 0;
-    box-sizing: border-box;
-    gap: 0;
-    background: var(--blue-bg);
-}
-
-.analytics-title {
-    grid-column: 1 / 4;
-    grid-row: 1;
-    background: var(--blue-dark);
-    border: 1px solid var(--blue-deep);
-    padding: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--white);
-    font-size: 1.5rem;
-    font-weight: bold;
-}
-
-.execution-list-panel,
-.details-panel {
-    background: var(--white);
-}
-
-.execution-list-panel {
-    grid-column: 1 / 4;
-    grid-row: 2;
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    padding: 20px;
-    border: 1px solid var(--blue-dark);
-    border-top: none;
+    background: var(--blue-bg);
 }
 
-.execution-list-panel h2 {
-    margin: 0 0 10px 20px;
-    font-size: 1.2rem;
-    color: var(--text-dark);
+.analytics-header {
+    background: var(--blue-dark);
+    padding: 20px 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid var(--blue-deep);
+    flex-shrink: 0;
 }
 
-.details-panel .details-content h2 {
-    margin: 0 0 10px 20px;
-    font-size: 1.2rem;
-    color: var(--text-dark);
+.analytics-title {
+    color: var(--white);
+    font-size: 2rem;
+    font-weight: bold;
+    margin: 0;
+    margin-left: 60px !important;
 }
 
 .sort-controls {
     display: flex;
-    padding: 0 0 10px 0;
-    margin-top: 10px;
+    gap: 10px;
+    align-items: center;
 }
 
-.sort-controls select:first-child {
-    margin-right: 10px;
+.sort-controls label {
+    color: var(--white);
+    font-weight: 600;
 }
 
-.sort-controls select,
-.filter-group select,
-.filter-group input {
-    padding: 8px;
+.sort-controls select {
+    padding: 8px 12px;
     border: 1px solid var(--blue-light);
     border-radius: 4px;
     font-size: 0.9rem;
     background: var(--white);
+    cursor: pointer;
 }
 
-.sort-controls select {
-    flex: 1;
-}
-
-.execution-list {
+/* Execution Cards Container */
+.execution-cards {
     flex: 1;
     overflow-y: auto;
-    padding: 10px 0 0 0;
+    padding: 15px 30px 30px 30px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(500px, 1fr));
+    gap: 20px;
+    align-content: start;
 }
 
-.execution-list-panel .execution-item {
-    padding: 10px;
-    margin-bottom: 6px;
-    border: 1px solid var(--blue-light);
-    cursor: pointer;
-    transition: all 0.2s;
+/* Individual Execution Card */
+.execution-card {
+    background: var(--white);
+    border: 2px solid var(--blue-light);
+    border-radius: 8px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    min-height: 300px;
+    height: fit-content;
 }
 
-.execution-list-panel .execution-item:hover {
-    background: var(--blue-bg);
+.execution-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     border-color: var(--blue-base);
 }
 
-.execution-list-panel .execution-item.selected {
-    background: var(--blue-light);
-    border-color: var(--blue-base);
-    border-width: 2px;
+/* Card Header */
+.card-header {
+    background: linear-gradient(135deg, var(--blue-dark) 0%, var(--blue-base) 100%);
+    padding: 15px 20px;
+    color: var(--white);
 }
 
-.execution-list-panel .execution-header {
+.card-title-row {
     display: flex;
     align-items: center;
-    margin-bottom: 6px;
-}
-
-.execution-list-panel .execution-header .status-icon {
-    margin-right: 8px;
+    gap: 12px;
 }
 
 .status-icon {
-    font-size: 1.2rem;
+    font-size: 1.5rem;
     font-weight: bold;
 }
 
-.execution-list-panel .recipe-name {
-    font-weight: 600;
-    color: var(--text-dark);
+.recipe-name {
     flex: 1;
-}
-
-.execution-list-panel .execution-time,
-.execution-list-panel .execution-duration {
-    font-size: 0.8rem;
-    color: var(--text-light);
-    margin-bottom: 2px;
-    line-height: 1.3;
-}
-
-.execution-list-panel .execution-actions {
-    display: flex;
-    margin-top: 6px;
-}
-
-.execution-list-panel .execution-actions .btn-view-small {
-    margin-right: 5px;
-}
-
-
-.execution-list-panel .btn-view-small,
-.execution-list-panel .btn-delete-small,
-.details-panel .sensor-tab {
-    padding: 4px 8px;
-    cursor: pointer;
-    font-weight: 600;
-    transition: all 0.2s;
-}
-
-.execution-list-panel .btn-view-small,
-.details-panel .sensor-tab {
-    border: 2px solid var(--blue-base);
-    background: var(--white);
-    color: var(--blue-base);
-}
-
-.execution-list-panel .btn-view-small:hover,
-.details-panel .sensor-tab:hover {
-    background: var(--blue-base);
-    color: var(--white);
-}
-
-.execution-list-panel .btn-delete-small {
-    border: 1px solid var(--error);
-    background: var(--error);
-    color: var(--white);
-    font-size: 0.8rem;
-}
-
-.btn-delete-small:hover {
-    opacity: 0.8;
-}
-
-/* Action Buttons in Details */
-.details-panel .btn-export,
-.details-panel .btn-delete-execution {
-    padding: 8px 16px;
-    cursor: pointer;
-    font-weight: 600;
-    font-size: 0.9rem;
-    transition: all 0.2s;
-    margin-right: 10px;
-}
-
-.btn-export {
-    border: 2px solid var(--blue-base);
-    background: var(--white);
-    color: var(--blue-base);
-}
-
-.btn-export:hover {
-    background: var(--blue-base);
-    color: var(--white);
-}
-
-.btn-delete-execution {
-    border: 2px solid var(--error);
-    background: var(--error);
-    color: var(--white);
-}
-
-.btn-delete-execution:hover {
-    opacity: 0.8;
-}
-
-.details-panel {
-    grid-column: 4 / 11;
-    grid-row: 1 / 11;
-    overflow-y: auto;
-    border: 1px solid var(--blue-dark);
-    border-left: none;
-}
-
-.details-panel .details-content {
-    display: grid;
-    grid-template-columns: repeat(10, 1fr);
-    grid-template-rows: repeat(10, auto);
-    height: 100%;
-    padding: 0;
-}
-
-.details-panel .details-content h2 {
-    grid-column: 1 / 11;
-    grid-row: 1 / 3;
+    font-size: 1.3rem;
+    font-weight: 700;
     margin: 0;
-    padding-bottom: 8px;
-    align-self: center;
 }
 
-.details-panel .details-grid {
-    grid-column: 1 / 11;
-    grid-row: 3 / 5;
+.status-badge {
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Card Body */
+.card-body {
+    padding: 20px;
+}
+
+.info-grid {
     display: grid;
-    grid-template-columns: repeat(10, 1fr);
-    border: 1px solid var(--blue-dark);
-    border-left: none;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
 }
 
-.details-panel .detail-item {
-    padding: 10px 15px;
-    border-right: 1px solid var(--blue-light);
+.info-item {
     display: flex;
     flex-direction: column;
     gap: 4px;
 }
 
-/* ID: Spalte 1-3, Reihe 1 */
-.detail-item:nth-child(1) {
-    grid-column: 1 / 4;
-    grid-row: 1;
+.info-item-error {
+    grid-column: 1 / -1;
 }
 
-/* Start: Spalte 4-7, Reihe 1 */
-.detail-item:nth-child(2) {
-    grid-column: 4 / 8;
-    grid-row: 1;
-}
-
-/* Dauer: Spalte 8-10, Reihe 1 */
-.detail-item:nth-child(3) {
-    grid-column: 8 / 11;
-    grid-row: 1;
-    border-right: none;
-}
-
-/* Status: Spalte 1-3, Reihe 2 */
-.detail-item:nth-child(4) {
-    grid-column: 1 / 4;
-    grid-row: 2;
-    border-bottom: none;
-}
-
-/* Aktionen: Spalte 4-10, Reihe 2 */
-.detail-item:nth-child(5) {
-    grid-column: 4 / 11;
-    grid-row: 2;
-    border-right: none;
-    border-bottom: none;
-    display: flex;
-    align-items: center;
-}
-
-.detail-label {
+.info-label {
+    font-size: 0.85rem;
     font-weight: 600;
     color: var(--text-light);
-    font-size: 0.75rem;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
-    margin-bottom: 4px;
 }
 
-.detail-value {
-    font-size: 0.95rem;
+.info-value {
+    font-size: 1rem;
     color: var(--text-dark);
     font-weight: 500;
 }
 
-.details-panel .sensor-section {
-    grid-column: 1 / 11;
-    grid-row: 5 / 11;
-    display: flex;
-    flex-direction: column;
-}
-
-.sensor-section h3,
-.single-sensor-title {
-    color: var(--black);
+.info-item-error .info-value {
+    color: var(--error);
     font-weight: 600;
-    margin: 15px 0 10px 20px;
-    font-size: 1rem;
 }
 
-.single-sensor-title {
-    font-size: 1.1rem;
-    background: var(--blue-base);
-    color: var(--white);
-    padding: 8px 12px;
-    border-radius: 4px;
-}
-
-.sensor-tabs {
+/* Card Footer */
+.card-footer {
+    padding: 15px 20px;
+    background: var(--blue-bg);
+    border-top: 1px solid var(--blue-light);
     display: flex;
-    margin-bottom: 15px;
-    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: flex-end;
 }
 
-.sensor-tabs .sensor-tab {
-    margin-right: 8px;
-    margin-bottom: 8px;
-}
-
-.sensor-tab {
+.btn-print,
+.btn-delete {
     padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.95rem;
+    transition: all 0.2s;
 }
 
-.sensor-tab.active {
+.btn-print {
     background: var(--blue-base);
     color: var(--white);
 }
 
-.chart-container {
-    flex: 1;
-    width: 100%;
-    min-height: 250px;
-    margin: 10px 0 0 0;
-    background: var(--white);
-    border: 1px solid var(--blue-light);
-    border-left: none;
-    padding: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+.btn-print:hover {
+    background: var(--blue-dark);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
-.chart-container canvas {
-    max-width: 100%;
-    max-height: 100%;
+.btn-delete {
+    background: var(--error-red);
+    color: var(--white);
+}
+
+.btn-delete:hover {
+    background: #b71c1c;
+    transform: translateY(-1px);
+}
+
+/* Empty State */
+.empty-state {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text-light);
+}
+
+.empty-state p {
+    font-size: 1.2rem;
+    margin: 10px 0;
+}
+
+.empty-state .hint {
+    font-size: 1rem;
+    color: var(--text-lighter);
+}
+
+/* ============================================================
+   RESPONSIVE DESIGN
+   ============================================================ */
+
+@media screen and (max-width: 1200px) {
+    .execution-cards {
+        grid-template-columns: 1fr;
+        padding: 20px;
+    }
+}
+
+@media screen and (max-width: 768px) {
+    .analytics-header {
+        flex-direction: column;
+        gap: 15px;
+        align-items: flex-start;
+    }
+    
+    .sort-controls {
+        width: 100%;
+        flex-wrap: wrap;
+    }
+    
+    .info-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .card-footer {
+        flex-direction: column;
+    }
+    
+    .btn-print,
+    .btn-delete {
+        width: 100%;
+    }
 }
 
 

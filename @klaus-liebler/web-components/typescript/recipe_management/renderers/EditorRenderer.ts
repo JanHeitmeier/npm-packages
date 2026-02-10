@@ -19,6 +19,7 @@ export class EditorRenderer implements ViewHandle {
         steps: [],
         author: '',
         version: '1.0',
+        globalParameters: {},
     };
     
     private isStepSelectorOpen = false;
@@ -30,6 +31,9 @@ export class EditorRenderer implements ViewHandle {
         
         // Subscribe to state changes
         this.unsubscribe = recipeState.subscribe(() => this.onStateChange());
+        
+        // Request available steps from backend (needed for display names of imported steps)
+        this.requestAvailableSteps();
         
         // Request available recipes from backend (always load from machine first)
         this.loadRecipeList();
@@ -53,10 +57,7 @@ export class EditorRenderer implements ViewHandle {
     private onStateChange(): void {
         const recipe = recipeState.getCurrentRecipe();
         if (recipe) {
-            // Only update if we don't have a current recipe or if the IDs match
-            // This prevents overwriting an imported/edited recipe with an old one from state
             if (!this.currentRecipe.id || this.currentRecipe.id === recipe.id) {
-                // Deep copy to avoid reference issues with steps array
                 this.currentRecipe = {
                     id: recipe.id,
                     name: recipe.name,
@@ -70,9 +71,13 @@ export class EditorRenderer implements ViewHandle {
                     author: recipe.author,
                     version: recipe.version,
                     createdAt: recipe.createdAt,
-                    lastModified: recipe.lastModified
+                    lastModified: recipe.lastModified,
+                    globalParameters: recipe.globalParameters ? { ...recipe.globalParameters } : {},
                 };
-
+                
+                if (!recipe.globalParameters || Object.keys(recipe.globalParameters).length === 0) {
+                    this.extractGlobalParameters();
+                }
             }
         }
         
@@ -213,67 +218,100 @@ export class EditorRenderer implements ViewHandle {
         this.attachEventListeners();
     }
 
-    private renderGlobalParameters(): string {
-        // Sammle alle globalen Parameter aus allen Schritten im Rezept
-        const globalParams = new Map<string, any>();
+    private extractGlobalParameters(): void {
         const availableSteps = recipeState.getAvailableSteps();
+        const newGlobalParams: Record<string, string> = {};
         
         for (const step of this.currentRecipe.steps) {
             const stepMeta = availableSteps?.steps?.find((s: any) => s.typeId === step.stepTypeId);
-            if (stepMeta && stepMeta.parameters) {
+            if (stepMeta?.parameters) {
                 for (const param of stepMeta.parameters) {
-                    if (param.isGlobal && !globalParams.has(param.name)) {
-                        globalParams.set(param.name, {
-                            ...param,
-                            value: step.parameters[param.name] || param.defaultValue
-                        });
+                    if (param.isGlobal && !newGlobalParams[param.name]) {
+                        newGlobalParams[param.name] = step.parameters[param.name] || param.defaultValue || '';
+                    }
+                }
+            }
+        }
+        
+        this.currentRecipe.globalParameters = newGlobalParams;
+    }
+
+    private applyGlobalParametersToSteps(recipe: RecipeDto): RecipeDto {
+        const availableSteps = recipeState.getAvailableSteps();
+        
+        return {
+            ...recipe,
+            steps: recipe.steps.map(step => {
+                const stepMeta = availableSteps?.steps?.find((s: any) => s.typeId === step.stepTypeId);
+                const updatedParams = { ...step.parameters };
+                
+                // Fill empty parameter values from globalParameters
+                if (stepMeta?.parameters && recipe.globalParameters) {
+                    for (const paramMeta of stepMeta.parameters) {
+                        if (paramMeta.isGlobal) {
+                            const globalValue = recipe.globalParameters[paramMeta.name];
+                            // Only fill if step parameter is empty or parameter exists but has no value
+                            if (globalValue !== undefined && (!updatedParams[paramMeta.name] || updatedParams[paramMeta.name] === '')) {
+                                updatedParams[paramMeta.name] = globalValue;
+                            }
+                        }
+                    }
+                }
+                
+                return {
+                    ...step,
+                    parameters: updatedParams
+                };
+            })
+        };
+    }
+
+    private renderGlobalParameters(): string {
+        if (!this.currentRecipe.globalParameters || Object.keys(this.currentRecipe.globalParameters).length === 0) {
+            return '';
+        }
+        
+        const availableSteps = recipeState.getAvailableSteps();
+        const globalParamMeta = new Map<string, any>();
+        
+        for (const step of this.currentRecipe.steps) {
+            const stepMeta = availableSteps?.steps?.find((s: any) => s.typeId === step.stepTypeId);
+            if (stepMeta?.parameters) {
+                for (const param of stepMeta.parameters) {
+                    if (param.isGlobal && !globalParamMeta.has(param.name)) {
+                        globalParamMeta.set(param.name, param);
                     }
                 }
             }
         }
 
-        if (globalParams.size === 0) {
-            return '';
-        }
-
         return `
-            <div class="global-parameters-section">
-                <h3>GLOBAL Recipe Parameters</h3>
-                <div class="global-parameters-grid">
-                    ${Array.from(globalParams.values()).map(param => {
-                        let inputType = 'text';
-                        let inputValue = param.value;
+            <div class="recipe-wide-parameters-section">
+                <h3>Recipe-Wide Parameters</h3>
+                <p class="recipe-wide-params-hint">Apply to all steps using these parameters</p>
+                <div class="recipe-wide-parameters-grid">
+                    ${Object.entries(this.currentRecipe.globalParameters).map(([key, value]) => {
+                        const param = globalParamMeta.get(key);
+                        if (!param) return '';
                         
-                        if (param.type === 'bool') {
-                            inputType = 'checkbox';
-                        } else if (param.type === 'int') {
-                            inputType = 'number';
-                        } else if (param.type === 'float') {
-                            inputType = 'number';
-                        }
-                        // Color stays as text type, no special handling
+                        let inputType = 'text';
+                        if (param.type === 'bool') inputType = 'checkbox';
+                        else if (param.type === 'int' || param.type === 'float') inputType = 'number';
                         
                         return `
-                        <div class="parameter-item-wide">
-                            <div class="parameter-label-section">
-                                <label>
-                                    ${escapeHtml(param.label || param.name)}
-                                    <span class="info-icon" title="${escapeHtml(param.description)}${param.unit ? '\\n\\nUnit: ' + param.unit : ''}">ℹ️</span>
-                                </label>
-                            </div>
-                            <div class="parameter-input-section">
-                                <div class="parameter-input-group">
-                                    <input 
-                                        type="${inputType}" 
-                                        value="${escapeHtml(inputValue)}"
-                                        data-global-param-key="${escapeHtml(param.name)}"
-                                        placeholder="${escapeHtml(param.defaultValue)}"
-                                        ${param.type === 'int' ? 'step="1"' : param.type === 'float' ? 'step="0.01"' : ''}
-                                        ${param.minValue ? `min="${escapeHtml(param.minValue)}"` : ''}
-                                        ${param.maxValue ? `max="${escapeHtml(param.maxValue)}"` : ''}>
-                                    ${param.unit ? `<span class="parameter-unit">${escapeHtml(param.unit)}</span>` : ''}
-                                </div>
-                            </div>
+                        <div class="parameter-item">
+                            <label>
+                                ${escapeHtml(param.displayName || param.name)}
+                                ${param.unit ? ` (${escapeHtml(param.unit)})` : ''}
+                            </label>
+                            <input 
+                                type="${inputType}" 
+                                value="${escapeHtml(value)}"
+                                data-global-param-key="${escapeHtml(key)}"
+                                placeholder="${escapeHtml(param.defaultValue || '')}"
+                                ${param.type === 'int' ? 'step="1"' : param.type === 'float' ? 'step="0.01"' : ''}
+                                ${param.minValue ? `min="${escapeHtml(param.minValue)}"` : ''}
+                                ${param.maxValue ? `max="${escapeHtml(param.maxValue)}"` : ''}>
                         </div>
                         `;
                     }).join('')}
@@ -354,26 +392,10 @@ export class EditorRenderer implements ViewHandle {
                 const key = target.dataset.globalParamKey!;
                 const value = target.value;
                 
-                // Update all steps that have this global parameter
-                const availableSteps = recipeState.getAvailableSteps();
-                for (let i = 0; i < this.currentRecipe.steps.length; i++) {
-                    const step = this.currentRecipe.steps[i];
-                    const stepMeta = availableSteps?.steps?.find((s: any) => s.typeId === step.stepTypeId);
-                    if (stepMeta && stepMeta.parameters) {
-                        const globalParam = stepMeta.parameters.find((p: any) => p.name === key && p.isGlobal);
-                        if (globalParam) {
-                            step.parameters[key] = value;
-                        }
-                    }
+                if (!this.currentRecipe.globalParameters) {
+                    this.currentRecipe.globalParameters = {};
                 }
-                
-                // If currently selected step has this parameter, update display
-                if (this.selectedStepIndex >= 0) {
-                    const selectedParamInput = this.container.querySelector(`[data-param-key="${key}"]`) as HTMLInputElement;
-                    if (selectedParamInput) {
-                        selectedParamInput.value = value;
-                    }
-                }
+                this.currentRecipe.globalParameters[key] = value;
             });
         });
 
@@ -560,12 +582,13 @@ export class EditorRenderer implements ViewHandle {
 
     private newRecipe(): void {
         this.currentRecipe = {
-            id: '',  // Empty ID - will be generated on save
+            id: '',
             name: '',
             description: '',
             steps: [],
             author: '',
             version: '1.0',
+            globalParameters: {},
         };
         this.selectedStepIndex = -1;
         this.render();
@@ -649,10 +672,13 @@ export class EditorRenderer implements ViewHandle {
         // Always update lastModified timestamp when saving
         this.currentRecipe.lastModified = currentTime;
 
-        // Send recipe object directly in payload, not as JSON string
+        // Apply global parameters to step parameters before saving
+        const recipeToSave = this.applyGlobalParametersToSteps(this.currentRecipe);
+
+        // Send recipe object with filled parameters in payload
         this.sendCommandFn({
             command: 'save_recipe',
-            payload: this.currentRecipe,
+            payload: recipeToSave,
         });
 
         alert('Rezept gespeichert');
@@ -661,7 +687,7 @@ export class EditorRenderer implements ViewHandle {
     }
 
     private addStep(stepTypeId: string): void {
-        // Get step metadata to extract default aliases
+        // Get step metadata to extract default aliases and parameters
         const availableSteps = recipeState.getAvailableSteps();
         const stepMeta = availableSteps?.steps?.find(s => s.typeId === stepTypeId);
         
@@ -674,27 +700,39 @@ export class EditorRenderer implements ViewHandle {
             }
         }
         
+        // Build parameters map: Add global parameters as empty strings
+        // Backend will substitute them with globalParameters values
+        const parameters: Record<string, string> = {};
+        if (stepMeta && stepMeta.parameters) {
+            for (const paramMeta of stepMeta.parameters) {
+                if (paramMeta.isGlobal) {
+                    // Add as empty string - backend will fill from globalParameters
+                    parameters[paramMeta.name] = '';
+                }
+            }
+        }
+        
         const newStep: StepConfigDto = {
             stepTypeId,
-            parameters: {},
+            parameters: parameters,  // Include global parameters as empty strings
             aliases: aliases,  // Include default aliases from backend
             order: this.currentRecipe.steps.length,
         };
         
         this.currentRecipe.steps.push(newStep);
+        this.extractGlobalParameters();
         this.render();
     }
 
     private deleteStep(index: number): void {
         this.currentRecipe.steps.splice(index, 1);
-        // Reorder
         this.currentRecipe.steps.forEach((step, i) => step.order = i);
-        // Reset selection if deleted step was selected
         if (this.selectedStepIndex === index) {
             this.selectedStepIndex = -1;
         } else if (this.selectedStepIndex > index) {
             this.selectedStepIndex--;
         }
+        this.extractGlobalParameters();
         this.render();
     }
 
@@ -775,7 +813,8 @@ export class EditorRenderer implements ViewHandle {
                         version: recipe.version || '1.0',
                         steps: normalizedSteps,
                         createdAt: recipe.createdAt,  // Preserve original creation timestamp if available
-                        lastModified: recipe.lastModified  // Preserve last modified timestamp if available
+                        lastModified: recipe.lastModified,  // Preserve last modified timestamp if available
+                        globalParameters: recipe.globalParameters || {}  // Load global parameters from imported file
                     };
                     
                     // Ensure availableSteps are loaded
@@ -807,8 +846,11 @@ export class EditorRenderer implements ViewHandle {
             return;
         }
         
-        // Create JSON string
-        const recipeJson = JSON.stringify(this.currentRecipe, null, 2);
+        // Apply global parameters to step parameters before exporting
+        const recipeToExport = this.applyGlobalParametersToSteps(this.currentRecipe);
+        
+        // Create JSON string with filled parameters
+        const recipeJson = JSON.stringify(recipeToExport, null, 2);
         
         // Create download link
         const blob = new Blob([recipeJson], { type: 'application/json' });

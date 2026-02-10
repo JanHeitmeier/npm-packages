@@ -23,6 +23,12 @@ export class LiveViewRenderer implements ViewHandle {
 
     setSendFunction(sendFn: (cmd: any) => void): void {
         this.sendCommandFn = sendFn;
+        
+        // Request available steps if not already loaded (needed for sensor units)
+        const availableSteps = recipeState.getAvailableSteps();
+        if (!availableSteps || !availableSteps.steps || availableSteps.steps.length === 0) {
+            this.sendCommandFn({ command: 'get_available_steps' });
+        }
     }
 
     setContainer(container: HTMLElement): void {
@@ -190,9 +196,12 @@ export class LiveViewRenderer implements ViewHandle {
                     <h3>Acknowledge</h3>
                     <div class="status-buttons">
                         ${liveView.awaitingUserAcknowledgment ? `
-                            <button class="status-btn ack-ok" data-action="acknowledge">✓ Confirm</button>
+                            <button class="status-btn ack-ok" data-action="acknowledge">
+                                <span class="icon">✓</span>
+                                <span class="label">Confirm</span>
+                            </button>
                         ` : `
-                            <button class="status-btn" disabled>—</button>
+                            <p class="no-action-text">No action required</p>
                         `}
                     </div>
                 </div>
@@ -200,9 +209,7 @@ export class LiveViewRenderer implements ViewHandle {
                 <div class="live-status">
                     <h3>Status</h3>
                     <div class="status-content">
-                        <strong>${escapeHtml(liveView.recipeName || currentRecipe?.name || 'Unknown Recipe')}</strong>
-                        <span class="status-badge status-${liveView.recipeStatus}">${liveView.recipeStatus}</span>
-                        <div>${liveView.errorMessage ? escapeHtml(liveView.errorMessage) : 'Active'}</div>
+                        <div class="status-badge status-${liveView.recipeStatus}">${liveView.recipeStatus}</div>
                     </div>
                 </div>
                 
@@ -280,17 +287,52 @@ export class LiveViewRenderer implements ViewHandle {
             return '<p>No sensor data available</p>';
         }
 
+        // Get available steps to extract unit information
+        const availableSteps = recipeState.getAvailableSteps();
+        const currentRecipe = recipeState.getCurrentRecipe();
+        
+        // Build a map of sensor names to units from step metadata
+        const sensorUnits = new Map<string, string>();
+        if (availableSteps && currentRecipe) {
+            for (const step of currentRecipe.steps) {
+                const stepMeta = availableSteps.steps?.find(s => s.typeId === step.stepTypeId);
+                if (stepMeta && stepMeta.ioAliases) {
+                    for (const ioAlias of stepMeta.ioAliases) {
+                        if (ioAlias.isSensor && !sensorUnits.has(ioAlias.aliasName)) {
+                            sensorUnits.set(ioAlias.aliasName, ioAlias.unit || '');
+                        }
+                    }
+                }
+            }
+        }
+
         return entries.map(([name, value]) => {
             // Check if this looks like a boolean value (0 or 1)
             const isBooleanLike = (value === 0 || value === 1) && Number.isInteger(value);
-            const displayValue = isBooleanLike 
-                ? (value === 1 ? '✓ True' : '✗ False')
-                : value.toFixed(2);
+            const boolValue = value === 1;
+            
+            let displayValue: string;
+            let dataValue: string = '';
+            
+            if (isBooleanLike) {
+                displayValue = boolValue ? '✓ Active' : '✗ Inactive';
+                dataValue = boolValue ? 'true' : 'false';
+            } else {
+                displayValue = value.toFixed(2);
+                dataValue = 'numeric';
+            }
+            
+            // Get unit for this sensor
+            const unit = sensorUnits.get(name);
+            const unitDisplay = unit ? ` ${escapeHtml(unit)}` : '';
+            
+            // Add status class for boolean sensors
+            const statusClass = isBooleanLike ? (boolValue ? 'sensor-active' : 'sensor-inactive') : 'sensor-numeric';
             
             return `
-                <div class="sensor-item">
-                    <span class="sensor-name">${escapeHtml(name)}:</span>
-                    <span class="sensor-value">${displayValue}</span>
+                <div class="sensor-item ${statusClass}" data-value="${dataValue}">
+                    <span class="sensor-name">${escapeHtml(name)}</span>
+                    <span class="sensor-value">${displayValue}${unitDisplay}</span>
                 </div>
             `;
         }).join('');
@@ -301,16 +343,28 @@ export class LiveViewRenderer implements ViewHandle {
         
         if (status === 'running') {
             return `
-                <button class="control-btn" data-action="pause"><span style="font-size: 1.5em;">⏸</span> Pause</button>
-                <button class="control-btn" data-action="stop"><span style="font-size: 1.5em;">⏹</span> Stop</button>
+                <button class="control-btn pause-btn" data-action="pause">
+                    <span class="icon">⏸</span>
+                    <span class="label">Pause</span>
+                </button>
+                <button class="control-btn stop-btn" data-action="stop">
+                    <span class="icon">⏹</span>
+                    <span class="label">Stop</span>
+                </button>
             `;
         } else if (status === 'paused') {
             return `
-                <button class="control-btn" data-action="resume"><span style="font-size: 1.5em;">▶</span> Resume</button>
-                <button class="control-btn" data-action="stop"><span style="font-size: 1.5em;">⏹</span> Stop</button>
+                <button class="control-btn resume-btn" data-action="resume">
+                    <span class="icon">▶</span>
+                    <span class="label">Resume</span>
+                </button>
+                <button class="control-btn stop-btn" data-action="stop">
+                    <span class="icon">⏹</span>
+                    <span class="label">Stop</span>
+                </button>
             `;
         } else {
-            return '<p>Recipe not active</p>';
+            return '<p class="recipe-inactive-text">Recipe not active</p>';
         }
     }
 
