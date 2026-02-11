@@ -29,11 +29,21 @@ export class LiveViewRenderer implements ViewHandle {
         if (!availableSteps || !availableSteps.steps || availableSteps.steps.length === 0) {
             this.sendCommandFn({ command: 'get_available_steps' });
         }
+        
+        // Request current live view state (important when opening LiveView while recipe is running)
+        this.sendCommandFn({ command: 'request_live_view' });
+        console.log('[LiveViewRenderer] Initial live view request sent');
     }
 
     setContainer(container: HTMLElement): void {
         this.container = container;
         this.container.classList.add('recipe-mgmt-live-view');
+        
+        // Request current live view state when navigating to this view
+        if (this.sendCommandFn) {
+            this.sendCommandFn({ command: 'request_live_view' });
+            console.log('[LiveViewRenderer] Live view request sent (navigation)');
+        }
     }
 
     private startPolling(): void {
@@ -61,7 +71,8 @@ export class LiveViewRenderer implements ViewHandle {
         const currentRecipe = recipeState.getCurrentRecipe();
         
         // If we have liveView with recipeId but no currentRecipe loaded, request it
-        if (liveView && liveView.recipeId && (!currentRecipe || currentRecipe.id !== liveView.recipeId)) {
+        // ONLY if LiveView is visible to avoid overwriting Dashboard's selected recipe
+        if (this.isVisible() && liveView && liveView.recipeId && (!currentRecipe || currentRecipe.id !== liveView.recipeId)) {
             // Only request once per recipeId to avoid spam
             if (this.lastRequestedRecipeId !== liveView.recipeId) {
                 console.log('[LiveView] Recipe not loaded, requesting:', liveView.recipeId);
@@ -96,9 +107,7 @@ export class LiveViewRenderer implements ViewHandle {
                         <div class="sensors-content">No data</div>
                     </div>
                     <div class="control-buttons">
-                        <button class="control-btn" disabled>▶</button>
-                        <button class="control-btn" disabled>⏸</button>
-                        <button class="control-btn" disabled>⏹</button>
+                        <p class="recipe-inactive-text">Recipe not active</p>
                     </div>
                     <div class="live-instructions">
                         <h3>Instructions</h3>

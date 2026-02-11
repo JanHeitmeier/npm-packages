@@ -34,11 +34,15 @@ export type {
     TimeSeriesPointDto,
     SensorTimeSeriesDto,
     TimeSeriesDataDto,
+    AuthResponseDto,
+    CommandResponseDto,
     RecipeMessage,
 } from './types';
 
 // State (for advanced usage)
 export { recipeState, RecipeState } from './state';
 
+// Binary TimeSeries Deserializer (for advanced usage)
+export { TimeSeriesDeserializer } from './TimeSeriesDeserializer';
 
 // Lit-html in Bib kontrollieren zu nutzen

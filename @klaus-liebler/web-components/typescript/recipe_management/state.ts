@@ -7,6 +7,8 @@ import type {
     TimeSeriesDataDto,
 } from './types';
 
+import type { LiveViewDto, AvailableRecipesDto, AvailableStepsDto, RecipeDto, ExecutionHistoryDto, TimeSeriesDataDto } from './types';
+
 type StateChangeListener = () => void;
 
 export class RecipeState {
@@ -18,7 +20,70 @@ export class RecipeState {
     private timeSeriesData: TimeSeriesDataDto | null = null;
     private selectedExecutionId: string | null = null;
     
+    private sessionToken: string = '';
+    private currentRole: 'Admin' | 'RecipeEditor' | 'RecipeStarter' | 'Observer' = 'Observer';
+    
     private listeners: Set<StateChangeListener> = new Set();
+
+    constructor() {
+        this.loadSessionFromStorage();
+    }
+
+    private loadSessionFromStorage(): void {
+        const token = sessionStorage.getItem('recipeSessionToken');
+        const role = sessionStorage.getItem('recipeUserRole');
+        if (token && role) {
+            this.sessionToken = token;
+            this.currentRole = role as any;
+            console.log('%c[RecipeState] Session loaded from storage:', 'color: #2196F3', { role, tokenLength: token.length });
+        } else {
+            console.log('%c[RecipeState] No session in storage', 'color: #9E9E9E');
+        }
+    }
+
+    private saveSessionToStorage(): void {
+        if (this.sessionToken) {
+            sessionStorage.setItem('recipeSessionToken', this.sessionToken);
+            sessionStorage.setItem('recipeUserRole', this.currentRole);
+            console.log('%c[RecipeState] Session saved to storage:', 'color: #4CAF50', { role: this.currentRole, tokenLength: this.sessionToken.length });
+        } else {
+            sessionStorage.removeItem('recipeSessionToken');
+            sessionStorage.removeItem('recipeUserRole');
+            console.log('%c[RecipeState] Session cleared from storage', 'color: #FF5722');
+        }
+    }
+
+    // Session management
+    setSession(token: string, role: 'Admin' | 'RecipeEditor' | 'RecipeStarter' | 'Observer'): void {
+        this.sessionToken = token;
+        this.currentRole = role;
+        this.saveSessionToStorage();
+        this.notifyListeners();
+    }
+
+    clearSession(): void {
+        this.sessionToken = '';
+        this.currentRole = 'Observer';
+        this.saveSessionToStorage();
+        this.notifyListeners();
+    }
+
+    getSessionToken(): string {
+        return this.sessionToken;
+    }
+
+    getCurrentRole(): 'Admin' | 'RecipeEditor' | 'RecipeStarter' | 'Observer' {
+        return this.currentRole;
+    }
+
+    isLoggedIn(): boolean {
+        return this.sessionToken !== '';
+    }
+
+    hasPermission(requiredRole: 'Admin' | 'RecipeEditor' | 'RecipeStarter' | 'Observer'): boolean {
+        const roleHierarchy = { Observer: 0, RecipeStarter: 1, RecipeEditor: 2, Admin: 3 };
+        return roleHierarchy[this.currentRole] >= roleHierarchy[requiredRole];
+    }
 
     getLiveView(): LiveViewDto | null {
         return this.liveView;

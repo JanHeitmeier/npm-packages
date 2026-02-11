@@ -4,6 +4,9 @@ export interface CommandDto {
     executionId?: string;  // For get_timeseries, delete_execution commands
     payload?: any;  // Can be object or string
     requestId?: string;
+    sessionToken?: string;  // Session token from login
+    pin?: string;  // Only for login command
+    loginRole?: string;  // Role for login (Admin, RecipeEditor, RecipeStarter, Observer)
 }
 
 export interface LiveViewDto {
@@ -124,7 +127,21 @@ export interface TimeSeriesDataDto {
     series: SensorTimeSeriesDto[];
 }
 
+export interface AuthResponseDto {
+    success: boolean;
+    role: 'Admin' | 'RecipeEditor' | 'RecipeStarter' | 'Observer';
+    sessionToken: string;
+    errorMessage: string;
+}
+
+export interface CommandResponseDto {
+    success: boolean;
+    errorCode: number;  // 0 = OK, 401 = Unauthorized, 403 = Forbidden
+    errorMessage: string;
+    requestId: string;
+}
+
 export interface RecipeMessage {
-    type: 'LiveViewDto' | 'AvailableRecipesDto' | 'AvailableStepsDto' | 'RecipeDto' | 'ExecutionHistoryDto' | 'TimeSeriesDataDto';
-    data: LiveViewDto | AvailableRecipesDto | AvailableStepsDto | RecipeDto | ExecutionHistoryDto | TimeSeriesDataDto;
+    type: 'LiveViewDto' | 'AvailableRecipesDto' | 'AvailableStepsDto' | 'RecipeDto' | 'ExecutionHistoryDto' | 'TimeSeriesDataDto' | 'AuthResponseDto' | 'CommandResponseDto';
+    data: LiveViewDto | AvailableRecipesDto | AvailableStepsDto | RecipeDto | ExecutionHistoryDto | TimeSeriesDataDto | AuthResponseDto | CommandResponseDto;
 }

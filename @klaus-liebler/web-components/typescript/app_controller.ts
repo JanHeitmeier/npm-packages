@@ -248,14 +248,20 @@ export class AppController implements IAppManagement, IScreenControllerHost {
                     const jsonObj = JSON.parse(jsonStr);
                     // Only log non-liveview messages to reduce noise during polling
                     if (jsonObj.type !== 'liveview') {
-                      console.log(`[AppController] Recipe Management:`, jsonObj.type || jsonObj.command);
+                      console.log(`[AppController] Recipe Management:`, jsonObj.type || jsonObj.command || 'unknown', 'Full message:', jsonObj);
                     }
                     handler(jsonObj); // Call receiveMessage
                   } catch (e) {
                     console.error("Failed to parse Recipe Management JSON:", e);
                   }
+                } else {
+                  console.warn(`[AppController] Recipe Management: Empty JSON string in response`);
                 }
+              } else {
+                console.warn(`[AppController] Recipe Management: No response or payload in wrapper, responseType=${responseType}`);
               }
+            } else {
+              console.warn(`[AppController] Recipe Management: Unexpected responseType=${responseType}`);
             }
           }
         }, namespace);

@@ -125,8 +125,9 @@ export class DashboardRenderer implements ViewHandle {
 
     render(): void {
         const availableRecipes = recipeState.getAvailableRecipes();
+        const isLoggedIn = recipeState.isLoggedIn();
+        const currentRole = recipeState.getCurrentRole();
         
-        // Save current selection before re-rendering
         const currentSelect = this.container.querySelector('#recipe-select') as HTMLSelectElement;
         if (currentSelect && currentSelect.value) {
             this.currentlySelectedRecipeId = currentSelect.value;
@@ -138,7 +139,16 @@ export class DashboardRenderer implements ViewHandle {
 
                 <div class="dashboard-user">
                     <h2>User</h2>
-                    <p>Recipe Management</p>
+                    ${isLoggedIn ? `
+                        <p>Role: ${currentRole}</p>
+                        <button id="btn-logout" class="btn-secondary">Logout</button>
+                        ${currentRole === 'Admin' ? `
+                            <button id="btn-settings" class="btn-icon" title="Settings">⚙️</button>
+                        ` : ''}
+                    ` : `
+                        <p>Not logged in</p>
+                        <button id="btn-login" class="btn-primary">Login</button>
+                    `}
                 </div>
 
                 <div class="recipe-start dashboard-field">
@@ -161,7 +171,6 @@ export class DashboardRenderer implements ViewHandle {
             ${this.isStartConfirmModalOpen ? this.renderStartConfirmModal() : ''}
         `;
 
-        // Restore selection after re-rendering (before attaching listeners)
         if (this.currentlySelectedRecipeId) {
             const newSelect = this.container.querySelector('#recipe-select') as HTMLSelectElement;
             if (newSelect) {
@@ -225,6 +234,18 @@ export class DashboardRenderer implements ViewHandle {
             return '<p>No recipes available</p>';
         }
 
+        // Check if selected recipe is fully loaded
+        const currentRecipe = recipeState.getCurrentRecipe();
+        const selectedId = this.currentlySelectedRecipeId;
+        const isRecipeLoaded = selectedId && currentRecipe && currentRecipe.id === selectedId;
+        
+        console.log('[DashboardRenderer] renderRecipeList:', {
+            selectedId,
+            currentRecipeId: currentRecipe?.id,
+            isRecipeLoaded,
+            hasCurrentRecipe: !!currentRecipe
+        });
+
         return `
             <select id="recipe-select" style="width: 100%; padding: 8px; margin-bottom: 10px;">
                 <option value="">-- Select Recipe --</option>
@@ -234,7 +255,11 @@ export class DashboardRenderer implements ViewHandle {
                     </option>
                 `).join('')}
             </select>
-            <button class="btn-primary" data-action="start" style="padding: 12px 24px; background: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; width: 100%;">▶ Start Recipe</button>
+            <button class="btn-primary" data-action="start" 
+                    ${!isRecipeLoaded || !selectedId ? 'disabled' : ''}
+                    style="padding: 12px 24px; background: ${isRecipeLoaded ? '#4CAF50' : '#ccc'}; color: white; border: none; border-radius: 4px; cursor: ${isRecipeLoaded ? 'pointer' : 'not-allowed'}; width: 100%;">
+                ${isRecipeLoaded ? '▶ Start Recipe' : (selectedId ? '⏳ Loading Recipe...' : '▶ Start Recipe')}
+            </button>
         `;
     }
 
@@ -298,7 +323,22 @@ export class DashboardRenderer implements ViewHandle {
             });
         });
         
-        // Load recipe when selected from dropdown
+        // Auth buttons
+        const loginBtn = this.container.querySelector('#btn-login');
+        if (loginBtn) {
+            loginBtn.addEventListener('click', () => this.showLoginModal());
+        }
+        
+        const logoutBtn = this.container.querySelector('#btn-logout');
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', () => this.handleLogout());
+        }
+        
+        const settingsBtn = this.container.querySelector('#btn-settings');
+        if (settingsBtn) {
+            settingsBtn.addEventListener('click', () => this.showSettingsModal());
+        }
+        
         const recipeSelect = this.container.querySelector('#recipe-select') as HTMLSelectElement;
         if (recipeSelect) {
             recipeSelect.addEventListener('change', (e) => {
@@ -316,6 +356,20 @@ export class DashboardRenderer implements ViewHandle {
         
         if (!this.sendCommandFn) {
             console.error('[DashboardRenderer] Send function not configured');
+            return;
+        }
+
+        // Check permissions (actions that need authentication)
+        const needsStarter = ['start', 'confirm-start'];
+        const needsEditor = ['edit', 'delete'];
+        
+        if (needsStarter.includes(action) && !recipeState.hasPermission('RecipeStarter')) {
+            alert('Login as Recipe Starter or higher required');
+            return;
+        }
+        
+        if (needsEditor.includes(action) && !recipeState.hasPermission('RecipeEditor')) {
+            alert('Login as Recipe Editor or Admin required');
             return;
         }
 
@@ -416,7 +470,6 @@ export class DashboardRenderer implements ViewHandle {
             case 'view-execution':
                 console.log('[DashboardRenderer] View execution:', recipeId);
                 if (recipeId && this.navigateFn) {
-                    // Store execution ID in state for analytics view
                     console.log('[DashboardRenderer] Setting selectedExecutionId:', recipeId);
                     recipeState.setSelectedExecutionId(recipeId);
                     this.sendCommandFn({ command: 'get_timeseries', executionId: recipeId });
@@ -424,6 +477,165 @@ export class DashboardRenderer implements ViewHandle {
                 }
                 break;
         }
+    }
+
+    private showLoginModal(): void {
+        const modal = document.createElement('div');
+        modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:1000;';
+        
+        modal.innerHTML = `
+            <div style="background:white;padding:30px;border-radius:10px;width:320px;">
+                <h2>Login</h2>
+                <div style="margin-bottom:20px;">
+                    <label style="display:block;margin-bottom:5px;font-weight:600;">Select Role:</label>
+                    <select id="role-select" style="width:100%;padding:10px;font-size:16px;border:1px solid #ccc;border-radius:5px;">
+                        <option value="Observer">Observer (Read-only)</option>
+                        <option value="RecipeStarter">Recipe Starter (Start/Stop)</option>
+                        <option value="RecipeEditor">Recipe Editor (Create/Edit)</option>
+                        <option value="Admin">Admin (Full Access)</option>
+                    </select>
+                </div>
+                <div style="margin-bottom:20px;">
+                    <label style="display:block;margin-bottom:5px;font-weight:600;">Enter 4-digit PIN:</label>
+                    <input type="password" id="pin-input" maxlength="4" pattern="[0-9]{4}" 
+                           placeholder="0000"
+                           style="width:100%;padding:10px;font-size:24px;text-align:center;letter-spacing:10px;border:1px solid #ccc;border-radius:5px;" />
+                </div>
+                <div style="display:flex;gap:10px;">
+                    <button id="login-submit" class="btn-primary" style="flex:1;">Login</button>
+                    <button id="login-cancel" class="btn-secondary" style="flex:1;">Cancel</button>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+        
+        const input = modal.querySelector('#pin-input') as HTMLInputElement;
+        const roleSelect = modal.querySelector('#role-select') as HTMLSelectElement;
+        const submitBtn = modal.querySelector('#login-submit') as HTMLButtonElement;
+        const cancelBtn = modal.querySelector('#login-cancel') as HTMLButtonElement;
+        
+        input.focus();
+        
+        const doLogin = () => {
+            const pin = input.value;
+            const role = roleSelect.value;
+            
+            if (pin.length === 4 && /^[0-9]{4}$/.test(pin)) {
+                if (this.sendCommandFn) {
+                    this.sendCommandFn({ command: 'login', pin, loginRole: role });
+                }
+                document.body.removeChild(modal);
+            } else {
+                alert('Please enter a 4-digit PIN');
+            }
+        };
+        
+        submitBtn.addEventListener('click', doLogin);
+        input.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') doLogin();
+        });
+        
+        cancelBtn.addEventListener('click', () => {
+            document.body.removeChild(modal);
+        });
+        
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                document.body.removeChild(modal);
+            }
+        });
+    }
+
+    private handleLogout(): void {
+        if (this.sendCommandFn) {
+            this.sendCommandFn({ command: 'logout' });
+        }
+        recipeState.clearSession();
+        this.render();
+    }
+
+    private showSettingsModal(): void {
+        const modal = document.createElement('div');
+        modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:1000;';
+        
+        modal.innerHTML = `
+            <div style="background:white;padding:30px;border-radius:10px;width:400px;">
+                <h2>Change PINs (Admin)</h2>
+                <div style="margin:20px 0;">
+                    <label>Role:</label>
+                    <select id="role-select" style="width:100%;padding:8px;margin:5px 0;">
+                        <option value="Admin">Admin</option>
+                        <option value="RecipeEditor">Recipe Editor</option>
+                        <option value="RecipeStarter">Recipe Starter</option>
+                        <option value="Observer">Observer</option>
+                    </select>
+                </div>
+                <div style="margin:20px 0;">
+                    <label>Old PIN:</label>
+                    <input type="password" id="old-pin" maxlength="4" pattern="[0-9]{4}" 
+                           style="width:100%;padding:8px;margin:5px 0;font-size:18px;letter-spacing:8px;text-align:center;" />
+                </div>
+                <div style="margin:20px 0;">
+                    <label>New PIN:</label>
+                    <input type="password" id="new-pin" maxlength="4" pattern="[0-9]{4}" 
+                           style="width:100%;padding:8px;margin:5px 0;font-size:18px;letter-spacing:8px;text-align:center;" />
+                </div>
+                <div style="display:flex;gap:10px;margin-top:20px;">
+                    <button id="pin-submit" class="btn-primary" style="flex:1;">Change PIN</button>
+                    <button id="pin-cancel" class="btn-secondary" style="flex:1;">Cancel</button>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+        
+        const roleSelect = modal.querySelector('#role-select') as HTMLSelectElement;
+        const oldPinInput = modal.querySelector('#old-pin') as HTMLInputElement;
+        const newPinInput = modal.querySelector('#new-pin') as HTMLInputElement;
+        const submitBtn = modal.querySelector('#pin-submit') as HTMLButtonElement;
+        const cancelBtn = modal.querySelector('#pin-cancel') as HTMLButtonElement;
+        
+        const doChange = () => {
+            const role = roleSelect.value;
+            const oldPin = oldPinInput.value;
+            const newPin = newPinInput.value;
+            
+            if (oldPin.length !== 4 || newPin.length !== 4) {
+                alert('PINs must be 4 digits');
+                return;
+            }
+            
+            if (!/^[0-9]{4}$/.test(oldPin) || !/^[0-9]{4}$/.test(newPin)) {
+                alert('PINs must contain only digits');
+                return;
+            }
+            
+            if (!confirm(`Are you sure you want to change the ${role} PIN?`)) {
+                return;
+            }
+            
+            if (this.sendCommandFn) {
+                this.sendCommandFn({
+                    command: 'change_pin',
+                    payload: `${role},${oldPin},${newPin}`
+                });
+            }
+            
+            document.body.removeChild(modal);
+        };
+        
+        submitBtn.addEventListener('click', doChange);
+        
+        cancelBtn.addEventListener('click', () => {
+            document.body.removeChild(modal);
+        });
+        
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                document.body.removeChild(modal);
+            }
+        });
     }
 
     destroy(): void {
