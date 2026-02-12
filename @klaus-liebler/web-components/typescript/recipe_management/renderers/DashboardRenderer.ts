@@ -141,10 +141,12 @@ export class DashboardRenderer implements ViewHandle {
                     <h2>User</h2>
                     ${isLoggedIn ? `
                         <p>Role: ${currentRole}</p>
-                        <button id="btn-logout" class="btn-secondary">Logout</button>
-                        ${currentRole === 'Admin' ? `
-                            <button id="btn-settings" class="btn-icon" title="Settings">⚙️</button>
-                        ` : ''}
+                        <div style="display: flex; gap: 10px;">
+                            ${currentRole === 'Admin' ? `
+                                <button id="btn-settings" class="btn-secondary" style="font-size: 14px;">Change PINs</button>
+                            ` : ''}
+                            <button id="btn-logout" class="btn-secondary" style="font-size: 14px;">Logout</button>
+                        </div>
                     ` : `
                         <p>Not logged in</p>
                         <button id="btn-login" class="btn-primary">Login</button>
@@ -221,7 +223,7 @@ export class DashboardRenderer implements ViewHandle {
                         ${globalParamsHtml}
                     </div>
                     <div class="modal-footer" style="padding: 20px; border-top: 1px solid #e0e0e0; display: flex; gap: 10px; justify-content: flex-end;">
-                        <button class="btn-secondary" data-action="close-start-confirm" style="padding: 10px 20px; background: #ccc; border: none; border-radius: 4px; cursor: pointer;">Cancel</button>
+                        <button class="btn-secondary" data-action="close-start-confirm" style="padding: 10px 20px; background: red; color: white; border: none; border-radius: 4px; cursor: pointer;">Cancel</button>
                         <button class="btn-primary" data-action="confirm-start-recipe" style="padding: 10px 20px; background: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">Start</button>
                     </div>
                 </div>
@@ -257,7 +259,7 @@ export class DashboardRenderer implements ViewHandle {
             </select>
             <button class="btn-primary" data-action="start" 
                     ${!isRecipeLoaded || !selectedId ? 'disabled' : ''}
-                    style="padding: 12px 24px; background: ${isRecipeLoaded ? '#4CAF50' : '#ccc'}; color: white; border: none; border-radius: 4px; cursor: ${isRecipeLoaded ? 'pointer' : 'not-allowed'}; width: 100%;">
+                    style="padding: 12px 24px; background: ${isRecipeLoaded ? '#4CAF50' : '#ccc'}; color: ${isRecipeLoaded ? 'white' : '#333'}; border: none; border-radius: 4px; cursor: ${isRecipeLoaded ? 'pointer' : 'not-allowed'}; width: 100%;">
                 ${isRecipeLoaded ? '▶ Start Recipe' : (selectedId ? '⏳ Loading Recipe...' : '▶ Start Recipe')}
             </button>
         `;
@@ -498,12 +500,11 @@ export class DashboardRenderer implements ViewHandle {
                 <div style="margin-bottom:20px;">
                     <label style="display:block;margin-bottom:5px;font-weight:600;">Enter 4-digit PIN:</label>
                     <input type="password" id="pin-input" maxlength="4" pattern="[0-9]{4}" 
-                           placeholder="0000"
-                           style="width:100%;padding:10px;font-size:24px;text-align:center;letter-spacing:10px;border:1px solid #ccc;border-radius:5px;" />
+                           style="width:100%;padding:10px;font-size:24px;text-align:center;letter-spacing:10px;border:1px solid #ccc;border-radius:5px;box-sizing:border-box;" />
                 </div>
                 <div style="display:flex;gap:10px;">
                     <button id="login-submit" class="btn-primary" style="flex:1;">Login</button>
-                    <button id="login-cancel" class="btn-secondary" style="flex:1;">Cancel</button>
+                    <button id="login-cancel" class="btn-secondary" style="flex:1;background:red;color:white;">Cancel</button>
                 </div>
             </div>
         `;
@@ -564,7 +565,7 @@ export class DashboardRenderer implements ViewHandle {
                 <h2>Change PINs (Admin)</h2>
                 <div style="margin:20px 0;">
                     <label>Role:</label>
-                    <select id="role-select" style="width:100%;padding:8px;margin:5px 0;">
+                    <select id="role-select" style="width:100%;padding:8px;margin:5px 0;box-sizing:border-box;">
                         <option value="Admin">Admin</option>
                         <option value="RecipeEditor">Recipe Editor</option>
                         <option value="RecipeStarter">Recipe Starter</option>
@@ -574,16 +575,16 @@ export class DashboardRenderer implements ViewHandle {
                 <div style="margin:20px 0;">
                     <label>Old PIN:</label>
                     <input type="password" id="old-pin" maxlength="4" pattern="[0-9]{4}" 
-                           style="width:100%;padding:8px;margin:5px 0;font-size:18px;letter-spacing:8px;text-align:center;" />
+                           style="width:100%;padding:8px;margin:5px 0;font-size:18px;letter-spacing:8px;text-align:center;box-sizing:border-box;" />
                 </div>
                 <div style="margin:20px 0;">
                     <label>New PIN:</label>
                     <input type="password" id="new-pin" maxlength="4" pattern="[0-9]{4}" 
-                           style="width:100%;padding:8px;margin:5px 0;font-size:18px;letter-spacing:8px;text-align:center;" />
+                           style="width:100%;padding:8px;margin:5px 0;font-size:18px;letter-spacing:8px;text-align:center;box-sizing:border-box;" />
                 </div>
                 <div style="display:flex;gap:10px;margin-top:20px;">
                     <button id="pin-submit" class="btn-primary" style="flex:1;">Change PIN</button>
-                    <button id="pin-cancel" class="btn-secondary" style="flex:1;">Cancel</button>
+                    <button id="pin-cancel" class="btn-secondary" style="flex:1;background:red;color:white;">Cancel</button>
                 </div>
             </div>
         `;

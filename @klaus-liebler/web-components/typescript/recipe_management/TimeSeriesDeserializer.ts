@@ -41,6 +41,15 @@ export class TimeSeriesDeserializer {
         
         console.log(`[TimeSeriesDeserializer] Decoded ${base64.length} chars Base64 → ${bytes.length} bytes binary`);
         
+        // Handle empty data (no sensor data recorded)
+        if (bytes.length === 0 || base64.length === 0) {
+            console.log(`[TimeSeriesDeserializer] No timeseries data available (empty), returning empty dataset`);
+            return {
+                executionId,
+                series: []
+            };
+        }
+        
         // Step 2: Parse binary data
         const view = new DataView(bytes.buffer);
         let pos = 0;

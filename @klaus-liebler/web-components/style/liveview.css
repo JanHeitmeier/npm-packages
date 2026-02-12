@@ -5,6 +5,7 @@ body {
     padding: 0;
     width: 100vw;
     height: 100vh;
+    font-family: var(--font-main);
 }
 
 /* Grid mit 20 Spalten statt 10 */
@@ -42,6 +43,7 @@ body {
     color: var(--white);
     font-size: 1.5rem;
     font-weight: bold;
+    font-family: var(--font-main);
 }
 
 .live-details {
@@ -59,11 +61,12 @@ body {
 }
 
 .live-details h2 {
-    margin: 0;
-    font-size: 0.95rem;
+    margin: 10px 0 10px 0;
+    font-size: 1rem;
     color: var(--text-dark);
     flex-shrink: 0;
     align-self: flex-start;
+    font-family: var(--font-main);
 }
 
 .live-details .details-content {
@@ -79,7 +82,8 @@ body {
     display: flex;
     flex-direction: column;
     flex: 0 0 30%;
-    justify-content: space-evenly;
+    justify-content: center;
+    gap: 12px;
     height: 100%;
 }
 
@@ -97,22 +101,24 @@ body {
 }
 
 .live-details .detail-label {
-    font-size: 0.75rem;
+    font-size: 1rem;
     line-height: 1.2;
     color: var(--text-dark);
     font-weight: 600;
     text-align: right;
     width: 60px;
     flex-shrink: 0;
+    font-family: var(--font-main);
 }
 
 .live-details .detail-value {
-    font-size: 0.75rem;
+    font-size: 1rem;
     line-height: 1.2;
     color: var(--text-dark);
     text-align: left;
     white-space: nowrap;
     flex: 1;
+    font-family: var(--font-main);
 }
 
 .live-details .live-details .detail-item {
@@ -138,6 +144,7 @@ body {
     cursor: pointer;
     white-space: nowrap;
     transition: background 0.2s;
+    font-family: var(--font-main);
 }
 
 .live-details .detail-btn:hover {
@@ -158,7 +165,7 @@ body {
     align-items: stretch;
 }
 
-/* Progress Fill mit abgerundeten Ecken */
+/* Progress Fill mit abgerundeten Ecken nur unten */
 .progress-fill {
     width: 100%;
     background: var(--success-green);
@@ -167,7 +174,7 @@ body {
     align-items: center;
     justify-content: center;
     transition: height 0.3s ease;
-    border-radius: 30px;
+    border-radius: 0 0 30px 30px;
 }
 
 /* Progress Text mit starkem Schatten für bessere Lesbarkeit */
@@ -180,6 +187,7 @@ body {
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
+    font-family: var(--font-main);
 }
 
 .live-recipe-row {
@@ -220,6 +228,7 @@ body {
     margin-bottom: 8px;
     font-weight: 500;
     transition: all 0.3s ease;
+    font-family: var(--font-main);
 }
 
 .step-box.completed {
@@ -243,7 +252,7 @@ body {
     border: 1px solid var(--blue-dark);
     border-top: none;
     border-left: none;
-    padding: 15px !important;
+    padding: 15px 0 0 0 !important;
     margin: 0 !important;
     display: flex;
     flex-direction: column;
@@ -251,10 +260,11 @@ body {
 }
 
 .live-sensors h2 {
-    margin: 0;
-    font-size: 1.2rem;
+    margin: 0 15px 10px 15px;
+    font-size: 1rem;
     color: var(--text-dark);
     flex-shrink: 0;
+    font-family: var(--font-main);
 }
 
 .sensors-content {
@@ -296,6 +306,7 @@ body {
     text-align: left;
     word-break: break-word;
     flex: 1;
+    font-family: var(--font-main);
 }
 
 .sensor-value {
@@ -308,6 +319,7 @@ body {
     gap: 6px;
     white-space: nowrap;
     flex-shrink: 0;
+    font-family: var(--font-main);
 }
 
 /* Boolean sensor values styling */
@@ -338,7 +350,7 @@ body {
     grid-column: 13 / 21;
     grid-row: 3;
     display: flex;
-    gap: 0;
+    gap: 15px;
     background: var(--blue-bg);
     border: 1px solid var(--blue-dark);
     border-top: none;
@@ -351,10 +363,11 @@ body {
 }
 
 .control-btn {
-    width: 80px;
-    height: 80px;
+    width: 120px;
+    height: 120px;
     background: var(--color-button);
     border: 2px solid var(--blue-dark);
+    border-radius: 6px;
     color: var(--white);
     font-size: 28px;
     cursor: pointer;
@@ -369,11 +382,13 @@ body {
 .control-btn .icon {
     font-size: 2em;
     line-height: 1;
+    font-family: var(--font-main);
 }
 
 .control-btn .label {
     font-size: 0.8em;
     line-height: 1;
+    font-family: var(--font-main);
 }
 
 .control-btn.pause-btn {
@@ -448,6 +463,7 @@ body {
     font-size: 1rem;
     color: var(--text-dark);
     flex-shrink: 0;
+    font-family: var(--font-main);
 }
 
 .acknowledge-section,
@@ -470,13 +486,14 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
+    font-family: var(--font-main);
 }
 
 .status-buttons {
     display: flex;
     gap: 0;
     justify-content: center;
-    margin-top: 0;
+    margin-top: 15px;
 }
 
 .status-btn {
@@ -484,6 +501,7 @@ body {
     height: 70px;
     background: #4CAF50;
     border: 2px solid #2e7d32;
+    border-radius: 6px;
     color: white;
     font-size: 24px;
     cursor: pointer;
@@ -498,11 +516,13 @@ body {
 .status-btn .icon {
     font-size: 2em;
     line-height: 1;
+    font-family: var(--font-main);
 }
 
 .status-btn .label {
     font-size: 0.7em;
     line-height: 1;
+    font-family: var(--font-main);
 }
 
 .status-btn.ack-ok {
@@ -524,6 +544,7 @@ body {
     font-style: italic;
     text-align: center;
     margin: 0;
+    font-family: var(--font-main);
 }
 
 .recipe-inactive-text {
@@ -531,33 +552,38 @@ body {
     font-style: italic;
     text-align: center;
     margin: 0;
+    font-family: var(--font-main);
 }
 
-.status-badge {
+.live-status-badge {
     display: inline-block;
-    padding: 8px 16px;
-    border-radius: 4px;
+    padding: 0;
+    border-radius: 6px;
     font-weight: bold;
     font-size: 1.1rem;
     text-transform: uppercase;
     text-align: center;
     width: 100%;
+    height: 70px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
-.status-badge.status-running {
+.live-status-badge.status-running {
     background-color: var(--success-green);
     color: var(--white);
 }
 
-.status-badge.status-paused {
+.live-status-badge.status-paused {
     background-color: var(--warning-yellow);
     color: var(--text-dark);
 }
 
-.status-badge.status-stopped,
-.status-badge.status-idle,
-.status-badge.status-completed,
-.status-badge.status-error {
+.live-status-badge.status-stopped,
+.live-status-badge.status-idle,
+.live-status-badge.status-completed,
+.live-status-badge.status-error {
     background-color: #9E9E9E;
     color: var(--white);
 }

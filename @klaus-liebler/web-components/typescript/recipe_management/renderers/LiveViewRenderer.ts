@@ -218,7 +218,7 @@ export class LiveViewRenderer implements ViewHandle {
                 <div class="live-status">
                     <h3>Status</h3>
                     <div class="status-content">
-                        <div class="status-badge status-${liveView.recipeStatus}">${liveView.recipeStatus}</div>
+                        <div class="live-status-badge status-${liveView.recipeStatus}">${liveView.recipeStatus}</div>
                     </div>
                 </div>
                 
@@ -242,16 +242,15 @@ export class LiveViewRenderer implements ViewHandle {
         
         return `
             <div class="modal-overlay" data-action="close-description" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 10000;">
-                <div class="modal-content" style="max-width: 600px; background: white; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); max-height: 80vh; overflow: auto;" onclick="event.stopPropagation()">
-                    <div class="modal-header" style="padding: 20px; border-bottom: 1px solid #e0e0e0; position: relative;">
+                <div class="modal-content" style="max-width: 900px; background: white; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); max-height: 80vh; overflow: auto;" onclick="event.stopPropagation()">
+                    <div class="modal-header" style="padding: 20px; border-bottom: 1px solid #e0e0e0;">
                         <h2 style="margin: 0;">Recipe Description</h2>
-                        <button class="modal-close" data-action="close-description" style="position: absolute; top: 10px; right: 10px; background: none; border: none; font-size: 24px; cursor: pointer; color: #666;">×</button>
                     </div>
                     <div class="modal-body" style="padding: 20px; white-space: pre-wrap; line-height: 1.6;">
                         ${escapeHtml(description)}
                     </div>
                     <div class="modal-footer" style="padding: 20px; border-top: 1px solid #e0e0e0; display: flex; justify-content: flex-end;">
-                        <button class="btn-secondary" data-action="close-description" style="padding: 10px 20px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer;">Close</button>
+                        <button class="btn-secondary" data-action="close-description" style="padding: 10px 20px; background: red; color: white; border: none; border-radius: 4px; cursor: pointer;">Close</button>
                     </div>
                 </div>
             </div>

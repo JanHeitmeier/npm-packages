@@ -297,7 +297,7 @@ export function renderMainEditor(
             <div class="step-selector-content">
                 <div class="step-selector-header">
                     <h2>Schritt-Typ auswählen</h2>
-                    <button class="btn-secondary" data-action="close-step-selector">✕ Schließen</button>
+                    <button class="btn-secondary" data-action="close-step-selector" style="background:red;color:white;">✕ Schließen</button>
                 </div>
                 <div class="step-selector-body">
                     ${availableSteps ? renderStepSelector(availableSteps) : '<p class="loading">Lade verfügbare Schritt-Typen...</p>'}
@@ -310,7 +310,7 @@ export function renderMainEditor(
             <div class="step-selector-content">
                 <div class="step-selector-header">
                     <h2>Rezept zum Bearbeiten auswählen</h2>
-                    <button class="btn-secondary" data-action="close-recipe-loader">✕ Schließen</button>
+                    <button class="btn-secondary" data-action="close-recipe-loader" style="background:red;color:white;">✕ Schließen</button>
                 </div>
                 <div class="step-selector-body">
                     ${renderRecipeLoader(availableRecipes)}
