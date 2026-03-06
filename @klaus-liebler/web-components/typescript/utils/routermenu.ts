@@ -80,7 +80,6 @@ export default class RouterMenu implements IHtmlRenderer {
             @click=${(e: MouseEvent) => this.navigation_anchor_clicked(e, item.url)} 
             href=${item.url}
             title=${item.caption.strings?.[0] ?? ""}
-            style="display:flex;align-items:center;gap:8px;"
           >
             <span class="icon">${item.caption}</span>
           </a>

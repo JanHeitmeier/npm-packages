@@ -160,8 +160,18 @@ export class DashboardRenderer implements ViewHandle {
 
                 <div class="quick-stats dashboard-field">
                     <h2>Overview</h2>
-                    <p>Available Recipes: ${availableRecipes?.recipes?.length || 0}</p>
-                    <p>Recipe Executions in History: ${recipeState.getExecutionHistory()?.executions?.length || 0}</p>
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <tbody>
+                            <tr>
+                                <td style="padding: 6px 0; border-bottom: 1px solid #eee;">Available Recipes</td>
+                                <td style="padding: 6px 0; text-align: right; font-weight: 600; border-bottom: 1px solid #eee; border-left: 1px solid #eee; padding-left: 12px;">${availableRecipes?.recipes?.length || 0}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 6px 0;">Recipe Executions in History</td>
+                                <td style="padding: 6px 0; text-align: right; font-weight: 600; border-left: 1px solid #eee; padding-left: 12px;">${recipeState.getExecutionHistory()?.executions?.length || 0}</td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
 
                 <div class="recipe-history dashboard-field">
@@ -289,7 +299,7 @@ export class DashboardRenderer implements ViewHandle {
                             data-execution-id="${escapeHtml(exec.executionId)}">
                             <div style="display: flex; justify-content: space-between; align-items: center;">
                                 <div>
-                                    <span style="color: ${statusColor}; font-weight: bold;">${statusIcon}</span>
+                                    <span style="color: ${statusColor}; font-weight: bold; margin-right: 8px; display: inline-block;">${statusIcon}</span>
                                     <strong>${escapeHtml(exec.recipeName)}</strong>
                                     <div style="font-size: 0.85em; color: #666;">
                                         ${dateStr} • ${durationSec}s
@@ -459,7 +469,7 @@ export class DashboardRenderer implements ViewHandle {
                 }
                 break;
             case 'delete':
-                if (recipeId && confirm(`Rezept "${recipeId}" wirklich löschen?`)) {
+                if (recipeId && confirm(`Are you sure you want to delete recipe "${recipeId}"?`)) {
                     this.sendCommandFn({ command: 'delete_recipe', recipeId });
                     // Remove from localStorage immediately
                     this.deleteRecipeFromLocalStorage(Number(recipeId));

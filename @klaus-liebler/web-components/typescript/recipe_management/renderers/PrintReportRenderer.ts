@@ -22,7 +22,7 @@ export class PrintReportRenderer {
         // Open new window immediately (must be in same event loop as user click)
         this.printWindow = window.open('', '_blank');
         if (!this.printWindow) {
-            alert('Pop-up wurde blockiert. Bitte erlauben Sie Pop-ups für diese Seite.');
+            alert('Pop-up was blocked. Please allow pop-ups for this site.');
             return;
         }
         
@@ -31,7 +31,7 @@ export class PrintReportRenderer {
             <!DOCTYPE html>
             <html>
             <head>
-                <title>Laden...</title>
+                <title>Loading...</title>
                 <style>
                     body {
                         font-family: 'Dosis', sans-serif;
@@ -48,8 +48,8 @@ export class PrintReportRenderer {
             </head>
             <body>
                 <div class="loading">
-                    <h2>Lade Daten...</h2>
-                    <p>Bitte warten Sie, während die Druckansicht vorbereitet wird.</p>
+                    <h2>Loading data...</h2>
+                    <p>Please wait while the print view is being prepared.</p>
                 </div>
             </body>
             </html>
@@ -66,7 +66,7 @@ export class PrintReportRenderer {
             if (this.printWindow && !this.printWindow.closed) {
                 this.printWindow.document.body.innerHTML = `
                     <div class="error">
-                        <h2>Fehler beim Laden der Daten</h2>
+                        <h2>Error loading data</h2>
                         <p>${error}</p>
                     </div>
                 `;
@@ -157,7 +157,7 @@ export class PrintReportRenderer {
         
         return `
 <!DOCTYPE html>
-<html lang="de">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -167,7 +167,7 @@ export class PrintReportRenderer {
 <body>
     ${this.generateContent(data)}
     <div class="footer">
-        <p>Erstellt am: ${new Date().toLocaleString('de-DE')}</p>
+        <p>Generated on: ${new Date().toLocaleString('de-DE')}</p>
     </div>
 </body>
 </html>
@@ -180,19 +180,19 @@ export class PrintReportRenderer {
         
         return `
     <div class="container">
-        <h1>Ausführungsbericht</h1>
+        <h1>Execution Report</h1>
         <h2>${this.escapeHtml(execution.recipeName)}</h2>
         
-        <h3>Ausführungsinformationen</h3>
+        <h3>Execution Information</h3>
         <div class="info-list">
-            <div><strong>Execution-ID:</strong> ${this.escapeHtml(execution.executionId)}</div>
-            <div><strong>Recipe-ID:</strong> ${this.escapeHtml(execution.recipeId)}</div>
+            <div><strong>Execution ID:</strong> ${this.escapeHtml(execution.executionId)}</div>
+            <div><strong>Recipe ID:</strong> ${this.escapeHtml(execution.recipeId)}</div>
             <div><strong>Status:</strong> ${statusIcon} ${this.escapeHtml(execution.status)}</div>
-            <div><strong>Startzeit:</strong> ${this.formatTimestamp(execution.startTime)}</div>
-            <div><strong>Endzeit:</strong> ${this.formatTimestamp(execution.endTime)}</div>
-            <div><strong>Dauer:</strong> ${this.formatDuration(execution.duration)}</div>
+            <div><strong>Start time:</strong> ${this.formatTimestamp(execution.startTime)}</div>
+            <div><strong>End time:</strong> ${this.formatTimestamp(execution.endTime)}</div>
+            <div><strong>Duration:</strong> ${this.formatDuration(execution.duration)}</div>
             ${execution.errorMessage && execution.errorMessage.trim() !== '' ? 
-                `<div><strong>Fehler:</strong> ${this.escapeHtml(execution.errorMessage)}</div>` : ''}
+                `<div><strong>Error:</strong> ${this.escapeHtml(execution.errorMessage)}</div>` : ''}
         </div>
         
         ${this.generateRecipeDetails(data)}
@@ -205,29 +205,29 @@ export class PrintReportRenderer {
         const { recipe, execution, availableSteps } = data;
         
         if (!recipe) {
-            return '<h3>Rezeptdetails</h3><p>Keine Rezeptinformationen verfügbar</p>';
+            return '<h3>Recipe Details</h3><p>No recipe information available</p>';
         }
         
         return `
-        <h3>Rezeptdetails</h3>
+        <h3>Recipe Details</h3>
         <div class="info-list">
             <div><strong>Name:</strong> ${this.escapeHtml(recipe.name)}</div>
-            <div><strong>Beschreibung:</strong> ${this.escapeHtml(recipe.description || '-')}</div>
+            <div><strong>Description:</strong> ${this.escapeHtml(recipe.description || '-')}</div>
             <div><strong>Version:</strong> ${this.escapeHtml(recipe.version || '1.0')}</div>
-            <div><strong>Autor:</strong> ${this.escapeHtml(recipe.author || '-')}</div>
-            <div><strong>Anzahl Schritte:</strong> ${recipe.steps.length}</div>
+            <div><strong>Author:</strong> ${this.escapeHtml(recipe.author || '-')}</div>
+            <div><strong>Number of steps:</strong> ${recipe.steps.length}</div>
         </div>
         
         ${this.generateGlobalParameters(execution)}
         
-        <h4>Schritte</h4>
+        <h4>Steps</h4>
         <table>
             <thead>
                 <tr>
                     <th>#</th>
-                    <th>Step Type</th>
-                    <th>Step Name</th>
-                    <th>Parameter</th>
+                    <th>Step type</th>
+                    <th>Step name</th>
+                    <th>Parameters</th>
                 </tr>
             </thead>
             <tbody>
@@ -288,11 +288,11 @@ export class PrintReportRenderer {
         const { timeSeries } = data;
         
         if (!timeSeries || !timeSeries.series || timeSeries.series.length === 0) {
-            return '<h3>Sensordaten</h3><p>Keine Sensordaten verfügbar</p>';
+            return '<h3>Sensor Data</h3><p>No sensor data available</p>';
         }
         
         return `
-        <h3>Sensordaten</h3>
+        <h3>Sensor Data</h3>
         ${timeSeries.series.map((sensor, index) => `
         <div class="sensor-section">
             <h4>${this.escapeHtml(sensor.sensorName)}${sensor.unit ? ` (${this.escapeHtml(sensor.unit)})` : ''}</h4>
@@ -305,7 +305,7 @@ export class PrintReportRenderer {
 
     private generateSensorStats(sensor: SensorTimeSeriesDto): string {
         if (sensor.dataPoints.length === 0) {
-            return '<p>Keine Datenpunkte</p>';
+            return '<p>No data points</p>';
         }
         
         const values = sensor.dataPoints.map(p => p.value);
@@ -317,8 +317,8 @@ export class PrintReportRenderer {
         <div class="stats">
             <div><strong>Min:</strong> ${min.toFixed(2)}</div>
             <div><strong>Max:</strong> ${max.toFixed(2)}</div>
-            <div><strong>Durchschnitt:</strong> ${avg.toFixed(2)}</div>
-            <div><strong>Datenpunkte:</strong> ${values.length}</div>
+            <div><strong>Average:</strong> ${avg.toFixed(2)}</div>
+            <div><strong>Data points:</strong> ${values.length}</div>
         </div>
         `;
     }
@@ -437,14 +437,14 @@ export class PrintReportRenderer {
         ctx.rotate(-Math.PI / 2);
         ctx.textAlign = 'center';
         ctx.font = '14px Arial';
-        ctx.fillText(sensor.unit || 'Wert', 0, 0);
+        ctx.fillText(sensor.unit || 'Value', 0, 0);
         ctx.restore();
         
         // X-Axis label
         ctx.font = '14px Arial';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'top';
-        ctx.fillText('Zeit', width / 2, height - 30);
+        ctx.fillText('Time', width / 2, height - 30);
         
         // Draw data line
         ctx.strokeStyle = '#000';

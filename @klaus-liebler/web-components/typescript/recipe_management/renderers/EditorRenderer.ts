@@ -492,7 +492,7 @@ export class EditorRenderer implements ViewHandle {
                           this.currentRecipe.steps.length > 0;
         
         if (hasContent) {
-            const choice = confirm('Du hast ungespeicherte Änderungen. Möchtest du sie speichern?\n\nOK = Speichern und neues Rezept\nAbbrechen = Verwerfen und neues Rezept');
+            const choice = confirm('You have unsaved changes. Do you want to save them?\n\nOK = Save and create a new recipe\nCancel = Discard and create a new recipe');
             
             if (choice) {
                 // User wants to save first
@@ -503,7 +503,7 @@ export class EditorRenderer implements ViewHandle {
                 }, 100);
             } else {
                 // Ask again to confirm discarding
-                if (confirm('Wirklich verwerfen ohne zu speichern?')) {
+                if (confirm('Discard changes without saving?')) {
                     this.newRecipe();
                 }
             }
@@ -601,42 +601,42 @@ export class EditorRenderer implements ViewHandle {
 
         // Validate name (required)
         if (!this.currentRecipe.name.trim()) {
-            alert('Bitte gib einen Rezeptnamen ein');
+            alert('Please enter a recipe name');
             return;
         }
         if (this.currentRecipe.name.length > 50) {
-            alert('Rezeptname ist zu lang (max. 50 Zeichen)');
+            alert('Recipe name is too long (max 50 characters)');
             return;
         }
         
         // Validate description (required)
         if (!this.currentRecipe.description.trim()) {
-            alert('Bitte gib eine Beschreibung ein');
+            alert('Please enter a description');
             return;
         }
         if (this.currentRecipe.description.length > 500) {
-            alert('Beschreibung ist zu lang (max. 500 Zeichen)');
+            alert('Description is too long (max 500 characters)');
             return;
         }
         
         // Validate author (required)
         if (!this.currentRecipe.author.trim()) {
-            alert('Bitte gib einen Autor ein');
+            alert('Please enter an author');
             return;
         }
         if (this.currentRecipe.author.length > 50) {
-            alert('Autorenname ist zu lang (max. 50 Zeichen)');
+            alert('Author name is too long (max 50 characters)');
             return;
         }
         
         // Validate version (required)
         if (!this.currentRecipe.version.trim()) {
-            alert('Bitte gib eine Version ein');
+            alert('Please enter a version');
             return;
         }
         const versionPattern = /^\d+(\.\d+){0,2}$/;
         if (!versionPattern.test(this.currentRecipe.version.trim())) {
-            alert('Version muss im Format X.Y oder X.Y.Z sein (z.B. 1.0 oder 1.2.3)');
+            alert('Version must be in the format X.Y or X.Y.Z (e.g. 1.0 or 1.2.3)');
             return;
         }
         
@@ -681,7 +681,7 @@ export class EditorRenderer implements ViewHandle {
             payload: recipeToSave,
         });
 
-        alert('Rezept gespeichert');
+        alert('Recipe saved');
         // Refresh to show updated creation date
         this.render();
     }
@@ -754,11 +754,11 @@ export class EditorRenderer implements ViewHandle {
         }
 
         if (!this.currentRecipe.id || this.currentRecipe.id === '') {
-            alert('Kein Rezept zum Löschen geladen');
+            alert('No recipe loaded to delete');
             return;
         }
 
-        if (!confirm(`Möchtest du das Rezept "${this.currentRecipe.name}" wirklich löschen?`)) {
+        if (!confirm(`Are you sure you want to delete the recipe "${this.currentRecipe.name}"?`)) {
             return;
         }
         const recipeIdToDelete = Number(this.currentRecipe.id);
@@ -771,7 +771,7 @@ export class EditorRenderer implements ViewHandle {
         this.deleteRecipeFromLocalStorage(recipeIdToDelete);
 
         this.newRecipe();
-        alert('Rezept wurde gelöscht');
+        alert('Recipe deleted');
     }
 
     private importRecipe(): void {
@@ -792,7 +792,7 @@ export class EditorRenderer implements ViewHandle {
                     
                     // Validate basic recipe structure
                     if (!recipe.name || !recipe.steps) {
-                        alert('Ungültiges Rezept-Format: Name und Steps sind erforderlich');
+                        alert('Invalid recipe format: name and steps are required');
                         return;
                     }
                     
@@ -827,10 +827,10 @@ export class EditorRenderer implements ViewHandle {
                     
                     this.selectedStepIndex = -1;
                     this.render();
-                    alert(`Rezept "${recipe.name}" importiert. Bitte speichern, um es auf der Maschine zu speichern.`);
+                    alert(`Recipe "${recipe.name}" imported. Please save to store it on the machine.`);
                 } catch (error) {
                     console.error('[EditorRenderer] Error importing recipe:', error);
-                    alert('Fehler beim Importieren: Ungültiges JSON-Format');
+                    alert('Error importing: Invalid JSON format');
                 }
             };
             
@@ -842,7 +842,7 @@ export class EditorRenderer implements ViewHandle {
 
     private exportRecipe(): void {
         if (!this.currentRecipe.name) {
-            alert('Bitte gib dem Rezept zuerst einen Namen');
+            alert('Please enter a recipe name first');
             return;
         }
         

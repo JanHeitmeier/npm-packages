@@ -2,7 +2,7 @@ import { escapeHtml } from '../utils';
 
 export function renderRecipeLoader(availableRecipes: any): string {
     if (!availableRecipes || !availableRecipes.recipes || availableRecipes.recipes.length === 0) {
-        return '<p class="loading">Keine Rezepte verfügbar. Erstelle zuerst ein Rezept und speichere es.</p>';
+        return '<p class="loading">No recipes available. Create a recipe and save it first.</p>';
     }
 
     return `
@@ -26,10 +26,10 @@ export function renderRecipeLoader(availableRecipes: any): string {
                 return `
                 <div class="step-type-item" data-action="load-recipe" data-recipe-id="${escapeHtml(recipe.id)}">
                     <h4>${escapeHtml(recipe.name)} <span style="font-size: 0.8em; color: #999;">v${escapeHtml(recipe.version || '1.0')}</span></h4>
-                    <p>${escapeHtml(recipe.description || 'Keine Beschreibung')}</p>
+                    <p>${escapeHtml(recipe.description || 'No description')}</p>
                     <div style="font-size: 0.75em; color: #666; margin-top: 8px;">
-                        <div>Erstellt: ${createdDate}</div>
-                        <div>Geändert: ${modifiedDate}</div>
+                        <div>Created: ${createdDate}</div>
+                        <div>Modified: ${modifiedDate}</div>
                     </div>
                     <span class="step-type-category">ID: ${escapeHtml(recipe.id)}</span>
                 </div>
@@ -296,11 +296,11 @@ export function renderMainEditor(
         <div class="step-selector-modal ${isStepSelectorOpen ? 'active' : ''}" data-modal="step-selector">
             <div class="step-selector-content">
                 <div class="step-selector-header">
-                    <h2>Schritt-Typ auswählen</h2>
-                    <button class="btn-secondary" data-action="close-step-selector" style="background:red;color:white;">✕ Schließen</button>
+                    <h2>Select step type</h2>
+                    <button class="btn-secondary" data-action="close-step-selector" style="background:red;color:white;">✕ Close</button>
                 </div>
                 <div class="step-selector-body">
-                    ${availableSteps ? renderStepSelector(availableSteps) : '<p class="loading">Lade verfügbare Schritt-Typen...</p>'}
+                    ${availableSteps ? renderStepSelector(availableSteps) : '<p class="loading">Loading available step types...</p>'}
                 </div>
             </div>
         </div>
@@ -309,8 +309,8 @@ export function renderMainEditor(
         <div class="step-selector-modal ${isRecipeLoaderOpen ? 'active' : ''}" data-modal="recipe-loader">
             <div class="step-selector-content">
                 <div class="step-selector-header">
-                    <h2>Rezept zum Bearbeiten auswählen</h2>
-                    <button class="btn-secondary" data-action="close-recipe-loader" style="background:red;color:white;">✕ Schließen</button>
+                    <h2>Select recipe to edit</h2>
+                    <button class="btn-secondary" data-action="close-recipe-loader" style="background:red;color:white;">✕ Close</button>
                 </div>
                 <div class="step-selector-body">
                     ${renderRecipeLoader(availableRecipes)}

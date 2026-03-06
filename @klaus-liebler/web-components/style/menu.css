@@ -38,11 +38,26 @@
 .nav-dropdown li a {
     display: flex;
     align-items: center;
-    gap: 8px;
-    min-height: 48px;
-    padding: 8px 12px;
+    gap: 6px;
+    min-height: 34px;
+    padding: 4px 10px;
     color: #333;
     text-decoration: none;
+    font-size: 13px;
+    line-height: 1.2;
+}
+
+/* RouterMenu.Template wraps both icon+label into .icon */
+.nav-dropdown li a .icon {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.nav-dropdown li a .icon > span:first-child {
+    display: inline-flex;
+    width: 20px;
+    justify-content: center;
 }
 
 .menu-item {
@@ -72,4 +87,11 @@
 /* visibility helper for inline style toggles */
 .nav-dropdown[style*="display:block"] {
     display: block;
+}
+
+/* Ensure inline svg in the menu button matches previous appearance */
+.nav-menu-icon svg {
+    width: 24px;
+    height: 24px;
+    fill: white;
 }
