@@ -501,17 +501,6 @@ export class PrintReportRenderer {
         }
     }
 
-    private getStatusColor(status: string): string {
-        switch (status.toLowerCase()) {
-            case 'completed': return '#4CAF50';
-            case 'running': return '#2196F3';
-            case 'failed': return '#f44336';
-            case 'error': return '#f44336';
-            case 'aborted': return '#FF9800';
-            default: return '#9E9E9E';
-        }
-    }
-
     private escapeHtml(text: string): string {
         const div = document.createElement('div');
         div.textContent = text;

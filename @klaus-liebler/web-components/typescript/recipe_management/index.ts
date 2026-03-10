@@ -44,5 +44,3 @@ export { recipeState, RecipeState } from './state';
 
 // Binary TimeSeries Deserializer (for advanced usage)
 export { TimeSeriesDeserializer } from './TimeSeriesDeserializer';
-
-// Lit-html in Bib kontrollieren zu nutzen
