@@ -232,43 +232,41 @@ export class AppController implements IAppManagement, IScreenControllerHost {
   
   public Startup() {
     // ========== Recipe Management Setup (ONCE) ==========
-    setupRecipeManagement({
-      sendMessage: (cmd: CommandDto) => this.sendRecipeCommand(cmd),
-      registerWebSocket: (namespace: number, handler: (data: any) => void) => {
-        // Register for Namespace 11
-        this.RegisterWebsocketMessageNamespace({
-          OnMessage: (namespace: number, bb: flatbuffers.ByteBuffer) => {
-            console.log(`[AppController] Recipe Management message received, namespace: ${namespace}`);
-            const wrapper = ResponseWrapper.getRootAsResponseWrapper(bb);
-            const responseType = wrapper.responseType();
-            
-            if (responseType === 1) { // ResponseJson is type 1
-              const response = wrapper.response(new ResponseJson());
-              if (response && response.payload()) {
-                const jsonStr = response.payload()!.json();
-                if (jsonStr) {
-                  try {
-                    const jsonObj = JSON.parse(jsonStr);
-                    // Only log non-liveview messages to reduce noise during polling
-                    if (jsonObj.type !== 'liveview') {
-                      console.log(`[AppController] Recipe Management:`, jsonObj.type || jsonObj.command || 'unknown', 'Full message:', jsonObj);
-                    }
-                    handler(jsonObj); // Call receiveMessage
-                  } catch (e) {
-                    console.error("Failed to parse Recipe Management JSON:", e);
-                  }
-                } else {
-                  console.warn(`[AppController] Recipe Management: Empty JSON string in response`);
+    // Register WebSocket handler for Recipe Management (Namespace 11)
+    this.RegisterWebsocketMessageNamespace({
+      OnMessage: (namespace: number, bb: flatbuffers.ByteBuffer) => {
+        console.log(`[AppController] Recipe Management message received, namespace: ${namespace}`);
+        const wrapper = ResponseWrapper.getRootAsResponseWrapper(bb);
+        const responseType = wrapper.responseType();
+        
+        if (responseType === 1) { // ResponseJson is type 1
+          const response = wrapper.response(new ResponseJson());
+          if (response && response.payload()) {
+            const jsonStr = response.payload()!.json();
+            if (jsonStr) {
+              try {
+                const jsonObj = JSON.parse(jsonStr);
+                if (jsonObj.type !== 'liveview') {
+                  console.log(`[AppController] Recipe Management:`, jsonObj.type || jsonObj.command || 'unknown', 'Full message:', jsonObj);
                 }
-              } else {
-                console.warn(`[AppController] Recipe Management: No response or payload in wrapper, responseType=${responseType}`);
+                receiveMessage(jsonObj);
+              } catch (e) {
+                console.error("Failed to parse Recipe Management JSON:", e);
               }
             } else {
-              console.warn(`[AppController] Recipe Management: Unexpected responseType=${responseType}`);
+              console.warn(`[AppController] Recipe Management: Empty JSON string in response`);
             }
+          } else {
+            console.warn(`[AppController] Recipe Management: No response or payload in wrapper, responseType=${responseType}`);
           }
-        }, namespace);
-      },
+        } else {
+          console.warn(`[AppController] Recipe Management: Unexpected responseType=${responseType}`);
+        }
+      }
+    }, 11);
+
+    setupRecipeManagement({
+      sendMessage: (cmd: CommandDto) => this.sendRecipeCommand(cmd),
       onNavigate: (view: 'live' | 'dashboard' | 'editor' | 'analytics') => {
         // Navigate based on view parameter
         const routes: Record<string, string> = {
@@ -287,7 +285,6 @@ export class AppController implements IAppManagement, IScreenControllerHost {
     });
     console.log("Recipe Management initialized in AppController");
 
-    // Menu toggle icon is always the same (burger icon)
 
     // Menüeinträge registrieren (Reihenfolge: Dashboard, Live, Recipe, Analytics, Combined Settings)
     this.AddScreenController(

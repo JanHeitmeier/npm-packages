@@ -14,13 +14,6 @@ export interface RecipeManagementConfig {
     sendMessage: (command: CommandDto) => void;
 
     /**
-     * Function to register WebSocket namespace handler
-     * @param namespace Namespace number (11 for Recipe Management)
-     * @param handler Message handler function
-     */
-    registerWebSocket: (namespace: number, handler: (data: any) => void) => void;
-
-    /**
      * Optional callback for navigation events
      * @param view Target view ('live' | 'dashboard' | 'editor' | 'analytics')
      */
@@ -48,8 +41,6 @@ let analyticsRenderer: AnalyticsRenderer | null = null;
 export function setupRecipeManagement(config: RecipeManagementConfig): void {
     globalSendFunction = config.sendMessage;
     globalNavigateFunction = config.onNavigate || null;
-
-    config.registerWebSocket(11, receiveMessage);
 
     liveViewRenderer = new LiveViewRenderer(document.createElement('div'));
     dashboardRenderer = new DashboardRenderer(document.createElement('div'));

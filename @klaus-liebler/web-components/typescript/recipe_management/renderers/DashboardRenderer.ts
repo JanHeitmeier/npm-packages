@@ -74,41 +74,6 @@ export class DashboardRenderer implements ViewHandle {
         this.render();
     }
 
-    private loadRecipeList(): void {
-        if (!this.backendRecipesLoaded) {
-            console.log('[DashboardRenderer] Requesting recipes from backend');
-            this.requestRecipeList();
-            this.render();
-            return;
-        }
-        
-
-        const availableRecipes = recipeState.getAvailableRecipes();
-        if (availableRecipes && availableRecipes.recipes && availableRecipes.recipes.length > 0) {
-            console.log('[DashboardRenderer] Recipes already in state:', availableRecipes.recipes.length);
-            this.render();
-            return;
-        }
-        
-
-        try {
-            const cachedRecipes = localStorage.getItem('recipe_available_recipes');
-            if (cachedRecipes) {
-                console.log('[DashboardRenderer] Loading recipes from localStorage as fallback');
-                const parsedRecipes = JSON.parse(cachedRecipes);
-                recipeState.setAvailableRecipes(parsedRecipes);
-                this.render();
-                return;
-            }
-        } catch (error) {
-            console.error('[DashboardRenderer] Error reading from localStorage:', error);
-        }
-        
-
-        this.requestRecipeList();
-        this.render();
-    }
-
     private requestRecipeList(): void {
         if (this.sendCommandFn) {
             console.log('[DashboardRenderer] Requesting recipe list from backend');

@@ -116,35 +116,7 @@ export class EditorRenderer implements ViewHandle {
         this.render();
     }
 
-    private updateRecipeInLocalStorage(recipe: any): void {
-        try {
-            const cachedRecipes = localStorage.getItem('recipe_available_recipes');
-            let recipes = cachedRecipes ? JSON.parse(cachedRecipes) : { recipes: [] };
-            
-            const recipeInfo = {
-                id: recipe.id,
-                name: recipe.name,
-                description: recipe.description,
-                version: recipe.version,
-                createdAt: Date.now(),
-                lastModified: Date.now()
-            };
-            
-            // Find and update or add recipe
-            const existingIndex = recipes.recipes.findIndex((r: any) => r.id === recipe.id);
-            if (existingIndex >= 0) {
-                recipes.recipes[existingIndex] = recipeInfo;
-            } else {
-                recipes.recipes.push(recipeInfo);
-            }
-            
-            localStorage.setItem('recipe_available_recipes', JSON.stringify(recipes));
-        } catch (error) {
-            console.error('[EditorRenderer] Error updating recipe in localStorage:', error);
-        }
-    }
-
-    private deleteRecipeFromLocalStorage(recipeId: number): void {
+    private deleteRecipeFromLocalStorage(recipeId: string): void {
         try {
             const cachedRecipes = localStorage.getItem('recipe_available_recipes');
             if (!cachedRecipes) {
@@ -345,9 +317,10 @@ export class EditorRenderer implements ViewHandle {
             const action = (btn as HTMLElement).dataset.action;
             const stepIndex = (btn as HTMLElement).dataset.stepIndex;
             const stepType = (btn as HTMLElement).dataset.stepType;
+            const recipeId = (btn as HTMLElement).dataset.recipeId;
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
-                this.handleAction(action!, stepIndex, stepType);
+                this.handleAction(action!, stepIndex, stepType, recipeId);
             });
         });
 
@@ -419,7 +392,7 @@ export class EditorRenderer implements ViewHandle {
         }
     }
 
-    private handleAction(action: string, stepIndexStr?: string, stepType?: string): void {
+    private handleAction(action: string, stepIndexStr?: string, stepType?: string, recipeId?: string): void {
         const stepIndex = stepIndexStr !== undefined ? parseInt(stepIndexStr) : -1;
 
         switch (action) {
@@ -457,7 +430,6 @@ export class EditorRenderer implements ViewHandle {
                 }
                 break;
             case 'load-recipe':
-                const recipeId = (event?.target as HTMLElement)?.closest('[data-recipe-id]')?.getAttribute('data-recipe-id');
                 if (recipeId) {
                     this.loadRecipe(recipeId);
                     this.closeRecipeLoader();
@@ -526,6 +498,9 @@ export class EditorRenderer implements ViewHandle {
         if (!this.sendCommandFn) {
             return;
         }
+
+        // Clear current recipe ID so onStateChange accepts the incoming recipe
+        this.currentRecipe.id = '';
 
         this.sendCommandFn({
             command: 'get_recipe',
@@ -700,14 +675,16 @@ export class EditorRenderer implements ViewHandle {
             }
         }
         
-        // Build parameters map: Add global parameters as empty strings
-        // Backend will substitute them with globalParameters values
+        // Build parameters map: Initialize ALL parameters with their default values
         const parameters: Record<string, string> = {};
         if (stepMeta && stepMeta.parameters) {
             for (const paramMeta of stepMeta.parameters) {
                 if (paramMeta.isGlobal) {
                     // Add as empty string - backend will fill from globalParameters
                     parameters[paramMeta.name] = '';
+                } else {
+                    // Initialize non-global parameters with their default value
+                    parameters[paramMeta.name] = paramMeta.defaultValue || '';
                 }
             }
         }
@@ -761,7 +738,7 @@ export class EditorRenderer implements ViewHandle {
         if (!confirm(`Are you sure you want to delete the recipe "${this.currentRecipe.name}"?`)) {
             return;
         }
-        const recipeIdToDelete = Number(this.currentRecipe.id);
+        const recipeIdToDelete = this.currentRecipe.id;
         this.sendCommandFn({
             command: 'delete_recipe',
             recipeId: recipeIdToDelete,

@@ -1,12 +1,3 @@
-import type {
-    LiveViewDto,
-    AvailableRecipesDto,
-    AvailableStepsDto,
-    RecipeDto,
-    ExecutionHistoryDto,
-    TimeSeriesDataDto,
-} from './types';
-
 import type { LiveViewDto, AvailableRecipesDto, AvailableStepsDto, RecipeDto, ExecutionHistoryDto, TimeSeriesDataDto } from './types';
 
 type StateChangeListener = () => void;
